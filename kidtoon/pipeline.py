@@ -1,8 +1,8 @@
-"""End-to-end: write -> review -> voice -> animate -> upload -> record history.
+"""Daily run: write -> review -> illustrate -> voice -> animate -> upload episode + Short -> record history.
 
-    python -m kidtoon.pipeline              # full run (needs API keys)
-    python -m kidtoon.pipeline --no-upload  # make the video but don't publish
-    python -m kidtoon.pipeline --demo       # built-in story, no API keys at all
+    python -m kidtoon.pipeline               # full run
+    python -m kidtoon.pipeline --no-upload   # make the videos, don't publish
+    python -m kidtoon.pipeline --demo        # built-in script (no Gemini call), no upload
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import datetime as dt
 import json
 import os
 import sys
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,57 +21,95 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def illustrate(gen, shots, size, img_dir: Path, tag: str, seed: int) -> list[Path]:
+    paths = []
+    for i, s in enumerate(shots):
+        log(f"  {tag} shot {i + 1}/{len(shots)}")
+        paths.append(gen.generate(s.visual, size, list(s.characters), seed + i * 101, img_dir / f"{tag}_{i:02d}.jpg"))
+    return paths
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--demo", action="store_true", help="use the built-in episode (no Claude call, no upload)")
-    ap.add_argument("--no-upload", action="store_true", help="render only")
+    ap.add_argument("--demo", action="store_true")
+    ap.add_argument("--no-upload", action="store_true")
+    ap.add_argument("--skip-short", action="store_true")
     ap.add_argument("--out", default=str(ROOT / "out"))
-    ap.add_argument("--minutes", type=float, help="override target length")
     args = ap.parse_args()
 
-    from .render import render_video
-    from .story import demo_episode, write_episode
+    from .images import ImageGen
+    from .render import make_video, thumbnail, write_srt
+    from .story import Episode, write_episode
 
     cfg = json.loads((ROOT / "config.json").read_text())
-    if args.minutes:
-        cfg["target_minutes"] = args.minutes
     hist_path = ROOT / "data" / "episodes.json"
     history = json.loads(hist_path.read_text()) if hist_path.exists() else []
     out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
+    work, img_dir = out / "work", out / "images"
+    work.mkdir(parents=True, exist_ok=True)
+    img_dir.mkdir(parents=True, exist_ok=True)
 
-    log("1/4 Writing episode")
-    ep, prop_svg = demo_episode() if args.demo else write_episode(cfg, history, log)
-    (out / "episode.json").write_text(ep.model_dump_json(indent=2))
-    (out / "prop.svg").write_text(prop_svg)
-
-    log("2/4 Producing video")
-    video, thumb = render_video(ep, prop_svg, cfg, out, log)
-    log(f"  -> {video} ({video.stat().st_size / 1e6:.1f} MB)")
-
-    description = (f"{ep.description}\n\n"
-                   f"Today's lesson: {ep.lesson}\n\n"
-                   f"Join Tumble, Pippa and Moss for gentle stories in {cfg['channel_name']}.\n"
-                   "This animated story was created with the help of AI tools and reviewed for kid-friendly content.")
-    tags = list(dict.fromkeys(ep.tags + cfg["youtube"]["default_tags"]))
-    (out / "description.txt").write_text(description)
-
-    video_id = None
-    if args.demo or args.no_upload or os.environ.get("DRY_RUN", "").lower() == "true":
-        log("3/4 Upload skipped")
+    log("1/5 Writing the episode")
+    if args.demo:
+        ep = Episode.model_validate_json((ROOT / "kidtoon" / "demo_episode.json").read_text())
     else:
-        log("3/4 Uploading to YouTube")
-        from .upload import upload
-        video_id = upload(video, thumb, ep.title, description, tags, cfg, log)
+        from .llm import Gemini
+        ep = write_episode(cfg, history, Gemini(cfg["text_models"], log), log)
+    (out / "episode.json").write_text(ep.model_dump_json(indent=2))
+    seed = zlib.crc32(ep.title.encode())
+
+    log("2/5 Illustrating")
+    gen = ImageGen(cfg, ROOT / "assets" / "cast", log)
+    gen.ensure_cast()
+    land, port = tuple(cfg["image"]["landscape"]), tuple(cfg["image"]["portrait"])
+    thumb_src = gen.generate(ep.thumbnail_visual + ". Expressive, bright, eye-catching close-up, characters looking at the viewer",
+                             land, list(ep.thumbnail_characters), seed, img_dir / "thumb.jpg")
+    ep_imgs = illustrate(gen, ep.shots, land, img_dir, "ep", seed)
+    short_imgs = [] if args.skip_short else illustrate(gen, ep.short.shots, port, img_dir, "short", seed + 7)
+    log(f"  {gen.count} new images")
+
+    log("3/5 Producing videos")
+    episode_mp4, short_mp4 = out / "episode.mp4", out / "short.mp4"
+    tl = make_video(ep.shots, ep_imgs, cfg, work, episode_mp4, portrait=False, title=ep.title, lesson=ep.lesson,
+                    title_image=thumb_src, seed=seed, tag="episode", log=log)
+    write_srt(tl, out / "episode.srt")
+    thumbnail(thumb_src, ep.title, out / "thumbnail.jpg")
+    if not args.skip_short:
+        make_video(ep.short.shots, short_imgs, cfg, work, short_mp4, portrait=True, title=ep.short.title,
+                   lesson=ep.lesson, title_image=None, seed=seed + 1, tag="short", log=log)
+
+    tags = list(dict.fromkeys(ep.tags + cfg["youtube"]["default_tags"]))
+    footer = (f"\n\nJoin Tumble, Pippa and Moss for gentle stories in {cfg['channel_name']}.\n"
+              "Story, pictures and voices were created with the help of AI tools and reviewed for kid-friendly content.")
+    ep_desc = f"{ep.description}\n\nToday's lesson: {ep.lesson}{footer}"
+    short_desc = f"{ep.short.description}\n\nWatch the full story \"{ep.title}\" on our channel.{footer}\n#shorts"
+    (out / "description.txt").write_text(ep_desc)
+
+    ids = {"episode": None, "short": None}
+    if args.demo or args.no_upload or os.environ.get("DRY_RUN", "").lower() == "true":
+        log("4/5 Upload skipped")
+    else:
+        log("4/5 Uploading")
+        from . import upload
+        yt = upload.client()
+        ids["episode"] = upload.upload(yt, episode_mp4, ep.title, ep_desc, tags, cfg,
+                                       thumb=out / "thumbnail.jpg", srt=out / "episode.srt", log=log)
+        if not args.skip_short:
+            title = ep.short.title if "#shorts" in ep.short.title.lower() else f"{ep.short.title} #shorts"
+            ids["short"] = upload.upload(yt, short_mp4, title, short_desc, tags, cfg,
+                                         delay_hours=cfg.get("short_delay_hours", 0), log=log)
 
     if not args.demo:
-        log("4/4 Recording episode history")
+        log("5/5 Saving history")
         history.append({"date": dt.date.today().isoformat(), "title": ep.title, "lesson": ep.lesson,
-                        "prop": ep.prop_name, "video_id": video_id})
+                        "episode_id": ids["episode"], "short_id": ids["short"]})
         hist_path.write_text(json.dumps(history, indent=2) + "\n")
-        if video_id and os.environ.get("GITHUB_STEP_SUMMARY"):
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
             with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-                f.write(f"### {ep.title}\nhttps://youtu.be/{video_id}\n\n{ep.lesson}\n")
+                f.write(f"### {ep.title}\n\n{ep.lesson}\n\n")
+                for k, v in ids.items():
+                    if v:
+                        f.write(f"- {k}: https://youtu.be/{v}\n")
     log("Done")
     return 0
 

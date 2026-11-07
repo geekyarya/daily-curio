@@ -37,9 +37,9 @@ async def _edge(text: str, voice: dict, out: Path) -> None:
     await edge_tts.Communicate(text, voice["voice"], rate=voice.get("rate", "+0%"), pitch=voice.get("pitch", "+0Hz")).save(str(out))
 
 
-def tts_line(text: str, voice: dict, workdir: Path, idx: int, log=print) -> np.ndarray:
+def tts_line(text: str, voice: dict, workdir: Path, idx, log=print) -> np.ndarray:
     """Synthesise one line. edge-tts first, espeak-ng as a fallback, silence as a last resort."""
-    mp3, wav = workdir / f"line{idx:03d}.mp3", workdir / f"line{idx:03d}.wav"
+    mp3, wav = workdir / f"line_{idx}.mp3", workdir / f"line_{idx}.wav"
     for attempt in range(3):
         try:
             asyncio.run(_edge(text, voice, mp3))
@@ -49,21 +49,11 @@ def tts_line(text: str, voice: dict, workdir: Path, idx: int, log=print) -> np.n
             log(f"    edge-tts failed (attempt {attempt+1}): {e}")
     if shutil.which("espeak-ng"):
         subprocess.run(["espeak-ng", "-s", "140", "-w", str(wav), text], check=True)
-        tmp = workdir / f"line{idx:03d}_r.wav"
+        tmp = workdir / f"line_{idx}_r.wav"
         _to_wav(wav, tmp)
         return read_wav(tmp)
     log("    WARNING: no TTS available, inserting silence")
     return np.zeros(int(SR * max(1.5, len(text.split()) * 0.4)), dtype=np.float32)
-
-
-def envelope(samples: np.ndarray, fps: int) -> np.ndarray:
-    """Per-video-frame loudness 0..1, used to drive mouth movement."""
-    hop = SR // fps
-    n = math.ceil(len(samples) / hop)
-    padded = np.pad(samples, (0, n * hop - len(samples)))
-    rms = np.sqrt((padded.reshape(n, hop) ** 2).mean(axis=1))
-    peak = rms.max() or 1.0
-    return rms / peak
 
 
 # --------------------------------------------------------------------------- music
@@ -113,14 +103,24 @@ def make_music(seconds: float, seed: int, sr: int = 44100) -> np.ndarray:
     return out[: int(sr * seconds)] / max(1e-6, np.abs(out).max()) * 0.8
 
 
-def mix(voice_wav: Path, music: np.ndarray, out_wav: Path, music_db: float = -20.0) -> None:
-    music_path = out_wav.with_name("music.wav")
-    write_wav(music_path, music, 44100)
-    # sidechain-style ducking: music dips while anyone is speaking
+def pick_music(music_dir: Path, seed: int) -> Path | None:
+    """A royalty-free track you dropped into assets/music (e.g. from the YouTube Audio Library)."""
+    tracks = sorted(p for p in music_dir.glob("*") if p.suffix.lower() in (".mp3", ".wav", ".m4a", ".ogg"))
+    return tracks[seed % len(tracks)] if tracks else None
+
+
+def mix(voice_wav: Path, out_wav: Path, seconds: float, seed: int, music_dir: Path, music_db: float = -19.0) -> None:
+    track = pick_music(music_dir, seed)
+    if track is None:
+        track = out_wav.with_name("music.wav")
+        write_wav(track, make_music(seconds, seed), 44100)
+    fade_start = max(0.0, seconds - 3)
+    # loop the track, duck it under speech, fade out at the end
     subprocess.run([
-        "ffmpeg", "-y", "-loglevel", "error", "-i", str(voice_wav), "-i", str(music_path),
+        "ffmpeg", "-y", "-loglevel", "error", "-i", str(voice_wav), "-stream_loop", "-1", "-i", str(track),
         "-filter_complex",
-        f"[0:a]aresample=44100,asplit=2[v][vs];[1:a]volume={music_db}dB[m];"
-        "[m][vs]sidechaincompress=threshold=0.02:ratio=6:attack=20:release=400[md];"
-        "[v][md]amix=inputs=2:duration=longest:normalize=0,alimiter=limit=0.95[out]",
+        f"[0:a]aresample=44100,asplit=2[v][vs];"
+        f"[1:a]aresample=44100,atrim=0:{seconds:.2f},volume={music_db}dB,afade=t=out:st={fade_start:.2f}:d=3[m];"
+        "[m][vs]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=500[md];"
+        "[v][md]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[out]",
         "-map", "[out]", "-ac", "2", "-ar", "44100", str(out_wav)], check=True)

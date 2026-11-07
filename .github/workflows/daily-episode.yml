@@ -1,20 +1,21 @@
-name: Daily episode
+name: Daily episode + Short
 
 on:
   schedule:
-    - cron: "17 15 * * *"   # every day at 15:17 UTC (edit to taste)
+    - cron: "17 13 * * *"   # every day at 13:17 UTC (edit to taste)
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Render only, don't upload"
+        description: "Make the videos but don't upload"
         type: boolean
         default: false
-      minutes:
-        description: "Target length in minutes (blank = config.json)"
-        required: false
+      skip_short:
+        description: "Skip the Short"
+        type: boolean
+        default: false
 
 permissions:
-  contents: write   # to commit data/episodes.json (episode history)
+  contents: write   # commit episode history (and character designs on the first run)
 
 concurrency:
   group: daily-episode
@@ -23,8 +24,8 @@ concurrency:
 jobs:
   episode:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: youtube   # optional: add required reviewers to this environment for a human approval gate
+    timeout-minutes: 120
+    environment: youtube   # optional: add yourself as a required reviewer for a human approval gate
     steps:
       - uses: actions/checkout@v4
 
@@ -36,14 +37,17 @@ jobs:
       - name: System packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg libcairo2 fonts-dejavu-core espeak-ng
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core
 
       - name: Python packages
         run: pip install -r requirements.txt
 
-      - name: Make and publish episode
+      - name: Make and publish
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
@@ -52,27 +56,30 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
         run: |
           ARGS=""
-          if [ -n "${{ inputs.minutes }}" ]; then ARGS="--minutes ${{ inputs.minutes }}"; fi
+          if [ "${{ inputs.skip_short }}" = "true" ]; then ARGS="--skip-short"; fi
           python -m kidtoon.pipeline $ARGS
 
-      - name: Keep the video as a build artifact
+      - name: Keep the videos as a build artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: episode-${{ github.run_number }}
           path: |
             out/episode.mp4
+            out/short.mp4
             out/thumbnail.jpg
             out/episode.json
+            out/episode.srt
             out/description.txt
+            assets/cast/*.png
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Save episode history
-        if: success() && inputs.dry_run != true
+      - name: Save history and character designs
+        if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/episodes.json
-          git diff --cached --quiet || git commit -m "Add episode: $(jq -r '.[-1].title' data/episodes.json)"
-          git push
+          git add data/episodes.json assets/cast
+          git diff --cached --quiet || git commit -m "Episode: $(jq -r '.[-1].title // "update"' data/episodes.json)"
+          git pull --rebase -q && git push

@@ -2,20 +2,43 @@
   "channel_name": "Maple Meadow Friends",
   "audience_age": "3-6",
   "language": "en",
-  "target_minutes": 3,
-  "model": "claude-opus-5-5",
+  "episode_minutes": 6,
+  "short_seconds": 50,
   "fps": 24,
-  "width": 1920,
-  "height": 1080,
+  "burn_captions": false,
+  "short_delay_hours": 6,
+
+  "text_models": ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"],
+
+  "image": {
+    "providers": ["cloudflare_flux2", "cloudflare_schnell", "pollinations"],
+    "landscape": [1344, 768],
+    "portrait": [768, 1344],
+    "style": "children's picture-book illustration, soft gouache and watercolor textures, warm pastel colors, rounded friendly shapes, gentle golden lighting, cozy and whimsical, highly detailed 2D storybook art, no text, no letters, no watermark"
+  },
+
+  "cast": {
+    "Tumble": {
+      "look": "a small chubby orange bear cub with a cream-colored round tummy and muzzle, round ears with pink insides, big shiny dark eyes, rosy cheeks, wearing a little green scarf",
+      "personality": "cheerful, curious and brave, loves exploring, sometimes rushes ahead",
+      "voice": {"voice": "en-US-AnaNeural", "rate": "+0%", "pitch": "-4Hz"}
+    },
+    "Pippa": {
+      "look": "a tiny round sky-blue songbird with a pale blue belly, a little curled feather tuft on her head, small orange beak, big sparkly eyes, rosy cheeks",
+      "personality": "chatty and musical, loves singing, counting and asking questions",
+      "voice": {"voice": "en-US-AnaNeural", "rate": "+10%", "pitch": "+18Hz"}
+    },
+    "Moss": {
+      "look": "a gentle old green tortoise with a domed brown patterned shell, kind sleepy eyes, round spectacles, a tiny white beard tuft",
+      "personality": "slow, calm and wise, gives gentle advice and tells jokes",
+      "voice": {"voice": "en-US-GuyNeural", "rate": "-18%", "pitch": "-6Hz"}
+    }
+  },
+  "narrator_voice": {"voice": "en-GB-SoniaNeural", "rate": "-8%", "pitch": "+0Hz"},
+
   "youtube": {
     "category_id": "27",
-    "default_tags": ["kids cartoon", "stories for kids", "preschool", "bedtime story", "animated story"],
+    "default_tags": ["kids cartoon", "stories for kids", "preschool", "bedtime story", "animated story", "toddler learning"],
     "playlist_id": ""
-  },
-  "voices": {
-    "narrator": {"voice": "en-GB-SoniaNeural", "rate": "-8%", "pitch": "+0Hz"},
-    "Tumble":   {"voice": "en-US-AnaNeural",   "rate": "+0%", "pitch": "-4Hz"},
-    "Pippa":    {"voice": "en-US-AnaNeural",   "rate": "+10%", "pitch": "+18Hz"},
-    "Moss":     {"voice": "en-US-GuyNeural",   "rate": "-18%", "pitch": "-6Hz"}
   }
 }

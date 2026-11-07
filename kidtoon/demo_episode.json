@@ -1,0 +1,48 @@
+{
+  "title": "Tumble and the Runaway Red Kite",
+  "description": "A gust of wind carries Tumble's brand-new kite away! With help from Pippa and Moss, Tumble learns that asking friends for help makes big problems feel small.",
+  "tags": ["kids story", "friendship story", "asking for help", "bear cartoon", "preschool story"],
+  "lesson": "When something feels too big, it's okay to ask your friends for help.",
+  "thumbnail_visual": "Tumble the bear cub joyfully holding the string of a bright red kite high in a blue sky over a flower meadow, Pippa the bird flying beside him",
+  "thumbnail_characters": ["Tumble", "Pippa"],
+  "shots": [
+    {"visual": "Wide shot of a sunny flower meadow in the morning with rolling green hills, Tumble the bear cub running happily while flying a bright red diamond kite with a tail of blue bows",
+     "characters": ["Tumble"], "camera": "pan_right", "effect": "petals",
+     "lines": [{"speaker": "narrator", "text": "One breezy morning in Maple Meadow, Tumble the bear cub had a brand-new red kite."},
+               {"speaker": "Tumble", "text": "Up, up, up it goes! Wheee!"}]},
+    {"visual": "Close-up of Tumble looking up in surprise, paws open, as the red kite string slips away into the windy sky, leaves swirling",
+     "characters": ["Tumble"], "camera": "zoom_in", "effect": "leaves",
+     "lines": [{"speaker": "narrator", "text": "Then, whoosh! A big gust of wind tugged the string right out of his paws."},
+               {"speaker": "Tumble", "text": "Oh no! Come back, kite!"}]},
+    {"visual": "Medium shot at the edge of a friendly sunlit forest, Pippa the little blue bird perched on a low branch talking to a sad Tumble",
+     "characters": ["Tumble", "Pippa"], "camera": "pan_left", "effect": "sparkles",
+     "lines": [{"speaker": "Pippa", "text": "Tumble, why do you look so sad?"},
+               {"speaker": "Tumble", "text": "My kite flew away. I tried to find it all by myself, but I can't."},
+               {"speaker": "Pippa", "text": "Then let's look together! Two eyes are good, but four eyes are better!"}]},
+    {"visual": "A calm pond with lily pads and tall reeds at golden afternoon, Moss the old tortoise with round spectacles smiling at Tumble and Pippa",
+     "characters": ["Tumble", "Pippa", "Moss"], "camera": "zoom_out", "effect": "bubbles",
+     "lines": [{"speaker": "Moss", "text": "Hello, little friends. I saw something red near the tall reeds."},
+               {"speaker": "Moss", "text": "Let's go slowly and look carefully, together."}]},
+    {"visual": "Sunset over the pond, Tumble hugging his red kite with blue bows, Pippa and Moss cheering beside him, warm golden light",
+     "characters": ["Tumble", "Pippa", "Moss"], "camera": "zoom_in", "effect": "fireflies",
+     "lines": [{"speaker": "Pippa", "text": "One bow, two bows, three bows! It's your kite!"},
+               {"speaker": "Tumble", "text": "You found it! Thank you, friends!"},
+               {"speaker": "narrator", "text": "When something feels too big, it's okay to ask your friends for help. See you next time in Maple Meadow!"}]}
+  ],
+  "short": {
+    "title": "Where did Tumble's kite go?",
+    "description": "Tumble's kite blows away, but his friends help him find it!",
+    "shots": [
+      {"visual": "Tall vertical view of a bright red kite with blue bows flying high in a blue sky with fluffy clouds, Tumble small at the bottom on a meadow reaching up",
+       "characters": ["Tumble"], "camera": "pan_up", "effect": "petals",
+       "lines": [{"speaker": "Tumble", "text": "Oh no! The wind took my kite! Where did it go?"}]},
+      {"visual": "Vertical view of Pippa the blue bird flying above tall reeds by a pond, looking down and pointing with her wing",
+       "characters": ["Pippa"], "camera": "zoom_in", "effect": "sparkles",
+       "lines": [{"speaker": "Pippa", "text": "I see something red! Can you spot it too?"}]},
+      {"visual": "Vertical close-up of Tumble hugging his red kite, Moss the tortoise smiling beside him at sunset",
+       "characters": ["Tumble", "Moss"], "camera": "zoom_out", "effect": "fireflies",
+       "lines": [{"speaker": "Tumble", "text": "My kite! Thank you, friends!"},
+                 {"speaker": "narrator", "text": "Big problems feel small when friends help."}]}
+    ]
+  }
+}

@@ -1,71 +1,85 @@
-# Maple Meadow Friends: an automated kids' cartoon channel
+# Maple Meadow Friends: an automated kids' story channel (free services only)
 
-A GitHub Actions workflow writes, animates, voices and uploads a new children's cartoon episode to YouTube on a schedule.
+Every day, a GitHub Actions workflow makes and uploads a **~6-minute illustrated story episode** and a
+**vertical YouTube Short**. Nothing in it costs money.
 
-```
-cron ─► Claude writes episode ─► Claude safety review ─► Claude draws the episode's prop (SVG)
-     ─► TTS voices per character ─► generated music-box score (ducked under speech)
-     ─► animated frames (lip-sync, blinking, bobbing, captions, fades) ─► MP4 + thumbnail
-     ─► YouTube upload (Made for Kids, AI disclosure) ─► history committed back to the repo
-```
+| Step | Service | Free allowance |
+|---|---|---|
+| Story, storyboard and kid-safety review | Google **Gemini API** free tier | plenty: about 4–10 requests per run |
+| Illustrations, with the same characters in every shot | **Cloudflare Workers AI**, FLUX.2 [klein] with character reference images | 10,000 neurons/day ≈ 55–60 images; one episode + Short uses about 35 |
+| Character and narrator voices | Microsoft Edge neural voices (`edge-tts`) | free, no key |
+| Music | your own royalty-free tracks in `assets/music/`, else a generated melody | free |
+| Animation and encoding | Python + ffmpeg on GitHub Actions | free for public repos |
+| Publishing | YouTube Data API | 10,000 units/day; about 3,600 used per run |
 
-**Cast** (original characters drawn in code, so they look the same in every episode):
-Tumble the orange bear cub, Pippa the little blue bird, and Moss the wise old turtle.
+## What the videos look like
 
-## Setup (about 20 minutes, once)
+- Every shot is a painted storybook illustration. Tumble the bear cub, Pippa the bird and Moss the tortoise stay consistent because each image is drawn from the character reference sheets in `assets/cast/`.
+- Slow camera moves (zooms and pans), crossfades between shots, and animated particles (snow, fireflies, petals, bubbles, sparkles).
+- An animated title card, an end card with the lesson, a separate voice for each character, music that dips under speech, and English captions uploaded to YouTube.
+- The Short is a 9:16 mini-story with burned-in captions. It is scheduled to go live 6 hours after the episode.
 
-1. **Push this folder to a new GitHub repo.**
-2. **Anthropic key**: add the repo secret `ANTHROPIC_API_KEY`.
-3. **YouTube API access**
+## Setup (once, about 30 minutes)
+
+1. **Push this folder to a new public GitHub repo.** Public repos get unlimited free Actions minutes.
+
+2. **Gemini (stories)**: create a free key at https://aistudio.google.com/apikey and save it as the repo secret `GEMINI_API_KEY`.
+
+3. **Cloudflare (pictures)**: sign up free at https://dash.cloudflare.com.
+   - Your *Account ID* is in the dashboard sidebar. Save it as the secret `CLOUDFLARE_ACCOUNT_ID`.
+   - Go to My Profile → API Tokens → Create Token → "Workers AI" template. Save the token as the secret `CLOUDFLARE_API_TOKEN`.
+
+4. **YouTube**
    - In Google Cloud Console, create a project and enable **YouTube Data API v3**.
-   - Set up the OAuth consent screen (External), add yourself as a test user, then **Publish app** so the refresh token doesn't expire after 7 days.
+   - Set up the OAuth consent screen (External), add yourself as a test user, then **Publish app** so the login doesn't expire after 7 days.
    - Create an OAuth client ID of type **Desktop app** and download it as `client_secret.json`.
-   - On your computer, run:
+   - On your own computer, run:
      ```bash
      pip install google-auth-oauthlib
      python scripts/get_youtube_token.py client_secret.json
      ```
-   - Sign in as the channel owner, then add the printed `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` and `YOUTUBE_REFRESH_TOKEN` as repo secrets.
-4. **Repo variables** (optional, under Settings → Secrets and variables → Actions → Variables):
-   - `PRIVACY_STATUS`: `private` (default), `unlisted` or `public`.
-   - `YOUTUBE_PLAYLIST_ID`: the playlist each new episode is added to.
-5. **Test it**: go to Actions → *Daily episode* → *Run workflow* with **dry_run** ticked, then download the video from the run's artifacts.
+   - Sign in as the channel owner, then save the 3 printed values as the secrets `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` and `YOUTUBE_REFRESH_TOKEN`.
+
+5. **Optional repo variables**: `PRIVACY_STATUS` (`private` by default, or `unlisted` / `public`) and `YOUTUBE_PLAYLIST_ID`.
+
+6. **First run**: go to Actions → *Daily episode + Short* → *Run workflow* with **dry_run** ticked.
+   - The first run designs the 3 characters and commits them to `assets/cast/`.
+   - Download the videos from the run's artifacts and check them.
+   - If you don't like a character, replace its PNG with your own drawing, or delete it so it's redesigned on the next run.
 
 ## Important YouTube rules
 
-- **Upload audit.** API projects created after July 2020 can only upload **private** videos until they pass Google's free [YouTube API audit](https://support.google.com/youtube/contact/yt_api_form). Apply early. Until it's approved, publish videos by hand in YouTube Studio.
-- **Made for Kids.** Every upload sets `selfDeclaredMadeForKids: true`, as COPPA requires. That turns off comments, personalised ads and notifications on those videos.
-- **AI disclosure.** `containsSyntheticMedia: true` is set, and the description says AI tools were used.
-- **Repetitive content and monetization.** YouTube may refuse to monetise mass-produced, template-like videos. To reduce the risk, vary the stories, keep a human looking at episodes, and add new settings and characters over time.
-- **Thumbnails** need a phone-verified channel. Without one, the upload still works and the thumbnail step is skipped.
-- **Quota.** One upload uses about 1,600 of the default 10,000 daily API units, so the limit is about 6 uploads a day.
+- **Upload audit.** API projects created after July 2020 can only upload **private** videos until they pass Google's free [YouTube API audit](https://support.google.com/youtube/contact/yt_api_form). Apply early, and publish by hand in YouTube Studio until then.
+- **Made for Kids** (COPPA) and the **AI content** label are set automatically on every upload.
+- **Monetization.** YouTube can refuse to monetise mass-produced or repetitive videos. Watch the episodes, keep the stories varied, and add your own touches (characters, music, intro).
+- **Thumbnails** need a phone-verified channel.
 
-## Human review (recommended for a kids' channel)
+## Human review (strongly recommended for a kids' channel)
 
-- Keep `PRIVACY_STATUS=private` and approve each video in YouTube Studio, **or**
-- under Settings → Environments → `youtube`, add yourself as a *required reviewer*. Each run then waits for your click before it starts.
+Gemini reviews each script against strict child-safety rules before anything is drawn, but a person should still check the result. Either:
 
-## Run locally
-
-```bash
-pip install -r requirements.txt            # also needs ffmpeg and libcairo2
-python -m kidtoon.pipeline --demo          # built-in story, no keys needed
-python -m kidtoon.pipeline --no-upload     # real Claude-written episode, no upload
-```
-
-The output goes to `out/`: `episode.mp4`, `thumbnail.jpg`, `episode.json`, `description.txt`.
+- keep `PRIVACY_STATUS=private` and publish each video yourself in YouTube Studio, **or**
+- under Settings → Environments → `youtube`, add yourself as a *required reviewer*. Each run then waits for your approval.
 
 ## Customising
 
 | What | Where |
 |---|---|
-| Channel name, length, age range, model, voices | `config.json` |
-| Schedule | `cron` line in `.github/workflows/daily-episode.yml` |
-| Story rules and safety rules | `kidtoon/story.py` (`SAFETY_RULES`, system prompt) |
-| Characters, backgrounds | `kidtoon/art.py` (plain SVG drawn in code) |
-| Animation, captions, title and end cards | `kidtoon/render.py` |
-| Music | `kidtoon/audio.py` (`make_music`) |
+| Channel name, episode length, art style, characters, voices, schedule of Shorts | `config.json` |
+| Daily time | `cron` in `.github/workflows/daily-episode.yml` |
+| Story and safety rules | `kidtoon/story.py` |
+| Camera moves, effects, title and end cards | `kidtoon/render.py` |
+| Music | drop `.mp3` files into `assets/music/` (e.g. from the YouTube Audio Library, *no attribution required* filter) |
 
-Voices use the free `edge-tts` service. If it is unreachable, the pipeline falls back to `espeak-ng`, which sounds robotic. For better voices, swap `tts_line` in `kidtoon/audio.py` to a paid TTS API.
+## Run locally
 
-**Cost per episode:** about $0.10–0.25 in Claude API usage. Everything else is free: GitHub Actions minutes for public repos, edge-tts, and the YouTube API.
+```bash
+pip install -r requirements.txt     # also needs ffmpeg
+export GEMINI_API_KEY=... CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=...
+python -m kidtoon.pipeline --no-upload
+python -m kidtoon.pipeline --demo   # built-in script, no Gemini needed
+```
+
+The output goes to `out/`: `episode.mp4`, `short.mp4`, `thumbnail.jpg`, `episode.srt`, `episode.json`, plus every illustration in `out/images/`.
+
+**If the daily image allowance runs out** partway through, the pipeline switches to FLUX.1 schnell (no reference images, so characters drift), then to Pollinations (slow, lower quality). A free key from https://enter.pollinations.ai saved as `POLLINATIONS_API_KEY` improves that last fallback.
