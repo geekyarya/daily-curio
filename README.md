@@ -82,4 +82,7 @@ python -m kidtoon.pipeline --demo   # built-in script, no Gemini needed
 
 The output goes to `out/`: `episode.mp4`, `short.mp4`, `thumbnail.jpg`, `episode.srt`, `episode.json`, plus every illustration in `out/images/`.
 
-**If the daily image allowance runs out** partway through, the pipeline switches to FLUX.1 schnell (no reference images, so characters drift), then to Pollinations (slow, lower quality). A free key from https://enter.pollinations.ai saved as `POLLINATIONS_API_KEY` improves that last fallback.
+**If the daily image allowance runs out**, the run stops before uploading anything, so no off-model video gets published. One episode + Short needs about 35 images, which fits comfortably in the free allowance.
+You can add `"pollinations"` (with a free `POLLINATIONS_API_KEY` from https://enter.pollinations.ai) or `"cloudflare_schnell"` to `image.providers` in `config.json` as fallbacks. Neither can use the character reference sheets, so characters may look different.
+
+`--demo` without a Cloudflare key uses the anonymous Pollinations endpoint for low-quality preview art. It's only for checking that the pipeline runs.

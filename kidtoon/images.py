@@ -28,7 +28,7 @@ class ImageGen:
         self.style = cfg["image"]["style"]
         self.providers = [p for p in cfg["image"]["providers"] if self._available(p)]
         if not self.providers:
-            raise RuntimeError("No image provider configured (set CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN)")
+            raise RuntimeError("No image provider configured: set the CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets")
         self.dead: set[str] = set()
         self.count = 0
 
@@ -36,6 +36,8 @@ class ImageGen:
     def _available(p: str) -> bool:
         if p.startswith("cloudflare"):
             return bool(os.environ.get("CLOUDFLARE_ACCOUNT_ID") and os.environ.get("CLOUDFLARE_API_TOKEN"))
+        if p == "pollinations":  # the anonymous endpoint is only used for --demo previews
+            return bool(os.environ.get("POLLINATIONS_API_KEY") or os.environ.get("KIDTOON_ALLOW_ANON"))
         return True
 
     # ------------------------------------------------------------------ public
@@ -48,7 +50,7 @@ class ImageGen:
                 continue
             for attempt in range(3):
                 try:
-                    img = getattr(self, f"_{p}")(full, size, refs, seed + attempt)
+                    img = getattr(self, f"_{p}")(full, size, refs, (seed + attempt) % 2_000_000_000)
                     img = cover(img.convert("RGB"), size)
                     img.save(out, quality=94)
                     self.count += 1
@@ -143,7 +145,7 @@ class ImageGen:
         if r.status_code in (401, 402, 429):
             raise QuotaError(f"HTTP {r.status_code}")
         if r.status_code >= 400 or not r.headers.get("content-type", "").startswith("image/"):
-            raise RuntimeError(f"HTTP {r.status_code}: {r.text[:200]}")
+            raise RuntimeError(f"HTTP {r.status_code}: {r.text[:700]}")
         img = Image.open(io.BytesIO(r.content)).convert("RGB")
         if not key:  # crop the corner watermark
             img = img.crop((0, 0, img.width, int(img.height * 0.93)))

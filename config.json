@@ -11,7 +11,8 @@
   "text_models": ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"],
 
   "image": {
-    "providers": ["cloudflare_flux2", "cloudflare_schnell", "pollinations"],
+    "providers": ["cloudflare_flux2"],
+    "_providers_help": "Add \"pollinations\" (needs POLLINATIONS_API_KEY) or \"cloudflare_schnell\" as fallbacks; they cannot use the character references, so characters may look different.",
     "landscape": [1344, 768],
     "portrait": [768, 1344],
     "style": "children's picture-book illustration, soft gouache and watercolor textures, warm pastel colors, rounded friendly shapes, gentle golden lighting, cozy and whimsical, highly detailed 2D storybook art, no text, no letters, no watermark"
