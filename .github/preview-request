@@ -1,2 +1,5 @@
-preview requested 2026-11-09T17:28:29Z
+request 2026-11-09T19:00:37Z
 format=top5
+publish=yes
+short=no
+providers=cloudflare_schnell,cloudflare_flux2

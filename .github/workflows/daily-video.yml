@@ -74,6 +74,9 @@ jobs:
           if [ "${{ inputs.skip_short }}" = "true" ]; then ARGS="--skip-short"; fi
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then  # request file: optional "format=", "topic=", "publish=yes" lines
             if grep -q '^publish=yes' .github/preview-request; then export DRY_RUN=false; fi
+            if grep -q '^short=no' .github/preview-request; then ARGS="$ARGS --skip-short"; fi
+            P=$(sed -n 's/^providers=//p' .github/preview-request | head -1)
+            if [ -n "$P" ]; then export IMAGE_PROVIDERS="$P"; fi
             F=$(sed -n 's/^format=//p' .github/preview-request | head -1)
             T=$(sed -n 's/^topic=//p' .github/preview-request | head -1)
             export VIDEO_FORMAT="${F:-$VIDEO_FORMAT}" VIDEO_TOPIC="${T:-$VIDEO_TOPIC}"

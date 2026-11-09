@@ -92,6 +92,8 @@ def main() -> int:
     if args.demo and not os.environ.get("CLOUDFLARE_API_TOKEN"):
         os.environ["CURIO_ALLOW_ANON"] = "1"  # low-quality preview art; never used for real uploads
         cfg["image"]["providers"] = ["pollinations"]
+    if os.environ.get("IMAGE_PROVIDERS"):  # e.g. "cloudflare_schnell,cloudflare_flux2" for a cheaper run
+        cfg["image"]["providers"] = [p.strip() for p in os.environ["IMAGE_PROVIDERS"].split(",") if p.strip()]
     gen = ImageGen(cfg, None, log)
     if not args.demo and not os.environ.get("GEMINI_API_KEY"):
         raise SystemExit("Missing secret: add GEMINI_API_KEY in the repo's Settings → Secrets and variables → Actions")
