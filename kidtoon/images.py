@@ -73,7 +73,8 @@ class ImageGen:
                 continue
             self.log(f"  designing {name}")
             prompt = (f"{self.style}. Character design reference sheet of {name}, {c['look']}. Full body, standing, "
-                      "facing the viewer with a friendly smile, centered, simple plain cream background, "
+                      "facing the viewer with a friendly smile, centered, simple plain cream background. "
+                      "Exactly one single character in one pose: no extra views, no turnaround, no small copies, "
                       "nothing else in the picture.")
             tmp = out.with_suffix(".jpg")
             self.generate(prompt, (768, 768), [], seed=sum(map(ord, name)), out=tmp)
