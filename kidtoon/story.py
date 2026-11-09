@@ -59,6 +59,18 @@ def words(shots: list[Shot]) -> int:
     return sum(len(l.text.split()) for s in shots for l in s.lines)
 
 
+def repair(ep: Episode) -> None:
+    """Fix small slips in place instead of spending a whole rewrite on them."""
+    for s in ep.shots + ep.short.shots:
+        s.characters = list(dict.fromkeys(s.characters))
+        for l in s.lines:
+            if l.speaker != "narrator" and l.speaker not in s.characters and len(s.characters) < 3:
+                s.characters.append(l.speaker)
+        s.lines = [l for l in s.lines if l.text.strip()]
+    for name in ep.thumbnail_characters[3:]:
+        ep.thumbnail_characters.remove(name)
+
+
 def validate(ep: Episode, cfg: dict) -> list[str]:
     p: list[str] = []
     target = cfg["episode_minutes"] * 140
@@ -134,6 +146,7 @@ Field guide:
     for attempt in range(1, 5):
         log(f"  writing (attempt {attempt})")
         ep = llm.json(system, prompt + feedback, Episode)
+        repair(ep)
         problems = validate(ep, cfg)
         if not problems:
             review = review_episode(llm, ep, rules, age)
