@@ -27,7 +27,6 @@ def log(msg: str) -> None:
 def soften(visual: str) -> str:
     """A plainer rewording for when a safety filter wrongly flags an image prompt."""
     first = re.split(r"(?<=[.;])\s", visual.strip())[0]
-    first = re.sub(r"(?<=\s)[A-Z][a-z]+(?:\s[A-Z][a-z]+)*(?:'s)?\s?", "", first)  # drop brand / proper names
     return f"A calm, wholesome, softly lit historical scene: {first.strip(' ,.')}"
 
 
