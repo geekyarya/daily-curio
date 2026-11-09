@@ -89,3 +89,18 @@ def _try(log, what, fn):
         fn()
     except HttpError as e:
         log(f"    {what} skipped: {e.reason}")
+
+
+def check(log=print) -> None:
+    """Confirm the YouTube login works and show which channel it uploads to (costs 1 quota unit, posts nothing)."""
+    yt = client()
+    items = yt.channels().list(part="snippet,statistics", mine=True).execute().get("items", [])
+    if not items:
+        raise SystemExit("YouTube login works, but this Google account has no channel. Sign in as the channel owner.")
+    for ch in items:
+        log(f"YouTube login OK -> channel '{ch['snippet']['title']}' (https://www.youtube.com/channel/{ch['id']}), "
+            f"{ch['statistics'].get('subscriberCount', '?')} subscribers, {ch['statistics'].get('videoCount', '?')} videos")
+
+
+if __name__ == "__main__":
+    check()
