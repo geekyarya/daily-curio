@@ -57,7 +57,7 @@ def illustrate(gen, shots, size, img_dir: Path, tag: str, seed: int) -> list[Pat
 
 def plan(cfg: dict, history: list[dict], fmt: str | None, topic: str | None) -> tuple[str, str]:
     """Rotate formats day by day; pick the least recently used topic category."""
-    day = dt.date.today().toordinal()
+    day = dt.datetime.now(dt.timezone.utc).date().toordinal()
     if not fmt or fmt == "auto":
         fmt = cfg["formats"][day % len(cfg["formats"])]
     used = [h.get("category") for h in history[-len(cfg["categories"]):]]
@@ -173,7 +173,7 @@ def main() -> int:
 
     if not args.demo:
         log("5/5 Saving history")
-        history.append({"date": dt.date.today().isoformat(), "format": fmt, "category": category,
+        history.append({"date": dt.datetime.now(dt.timezone.utc).date().isoformat(), "format": fmt, "category": category,
                         "title": v.title, "video_id": ids["video"], "short_id": ids["short"], "instagram": ig_link})
         hist_path.write_text(json.dumps(history, indent=2) + "\n")
         if os.environ.get("GITHUB_STEP_SUMMARY"):

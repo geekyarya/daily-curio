@@ -3,6 +3,7 @@ name: Daily video + Short
 on:
   schedule:
     - cron: "23 0 * * *"    # every day at 00:23 UTC, just after the free image allowance resets
+    - cron: "23 3 * * *"    # backup: only runs if nothing was posted yet today (delayed/failed main run)
   push:                     # changing this file starts a run (preview unless it contains "publish=yes")
     branches: [main]
     paths: [".github/preview-request"]
@@ -72,6 +73,11 @@ jobs:
           VIDEO_FORMAT: ${{ inputs.format || 'auto' }}
           VIDEO_TOPIC: ${{ inputs.topic }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && \
+             jq -e --arg d "$(date -u +%F)" 'any(.[]; .date == $d and .video_id != null)' data/videos.json >/dev/null; then
+            echo "A video was already posted today ($(date -u +%F)); nothing to do."
+            exit 0
+          fi
           ARGS=""
           if [ "${{ inputs.skip_short }}" = "true" ]; then ARGS="--skip-short"; fi
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then  # request file: optional "format=", "topic=", "publish=yes" lines

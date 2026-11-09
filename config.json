@@ -89,7 +89,7 @@
     "playlist_id": ""
   },
   "instagram": {
-    "enabled": true,
+    "enabled": false,
     "graph_version": "v23.0",
     "hashtags": [
       "#history",
@@ -105,6 +105,6 @@
     ]
   },
   "facebook": {
-    "enabled": true
+    "enabled": false
   }
 }
