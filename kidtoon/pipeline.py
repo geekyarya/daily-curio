@@ -49,6 +49,12 @@ def main() -> int:
     work.mkdir(parents=True, exist_ok=True)
     img_dir.mkdir(parents=True, exist_ok=True)
 
+    # check the image keys first, so a missing secret fails in seconds, not after the story is written
+    if args.demo and not os.environ.get("CLOUDFLARE_API_TOKEN"):
+        os.environ["KIDTOON_ALLOW_ANON"] = "1"  # low-quality preview art; never used for real uploads
+        cfg["image"]["providers"] = ["pollinations"]
+    gen = ImageGen(cfg, ROOT / ("assets/cast" if not args.demo else "out/demo_cast"), log)
+
     log("1/5 Writing the episode")
     if args.demo:
         ep = Episode.model_validate_json((ROOT / "kidtoon" / "demo_episode.json").read_text())
@@ -59,10 +65,6 @@ def main() -> int:
     seed = zlib.crc32(ep.title.encode())
 
     log("2/5 Illustrating")
-    if args.demo and not os.environ.get("CLOUDFLARE_API_TOKEN"):
-        os.environ["KIDTOON_ALLOW_ANON"] = "1"  # low-quality preview art; never used for real uploads
-        cfg["image"]["providers"] = ["pollinations"]
-    gen = ImageGen(cfg, ROOT / ("assets/cast" if not args.demo else "out/demo_cast"), log)
     gen.ensure_cast()
     land, port = tuple(cfg["image"]["landscape"]), tuple(cfg["image"]["portrait"])
     thumb_src = gen.generate(ep.thumbnail_visual + ". Expressive, bright, eye-catching close-up, characters looking at the viewer",

@@ -138,7 +138,7 @@ Field guide:
 - effect: a gentle animated overlay that suits the shot ("none" is fine).
 - lines: 1-5 lines per shot, each one or two short sentences.
 - thumbnail_visual: an eye-catching, expressive close-up moment for the video thumbnail (no text).
-- tags: 10-15 search tags. title: catchy, clear, under 70 characters, no clickbait.
+- tags: 10-15 search tags. title: one catchy, clear title under 70 characters (no "|" or subtitles), no clickbait.
 - description: 2-4 sentences for parents."""
 
     feedback = ""
