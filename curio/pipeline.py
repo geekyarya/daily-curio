@@ -150,10 +150,31 @@ def main() -> int:
             ids["short"] = upload.upload(yt, short_mp4, title, short_desc, tags, cfg,
                                          delay_hours=cfg.get("short_delay_hours", 0), log=log)
 
+    # Instagram + Facebook Page Reels from the Short. Each post is independent; failures fail the run at the end.
+    errors, ig_link = [], None
+    publishing = not (args.demo or args.no_upload or args.skip_short or os.environ.get("DRY_RUN", "").lower() == "true")
+    if publishing:
+        from . import facebook, instagram
+        caption = instagram.build_caption(v.short.title, v.short.description, v.title, cfg)
+        if cfg.get("instagram", {}).get("enabled") and instagram.have_credentials():
+            try:
+                log("  posting Instagram Reel")
+                ig_link = instagram.post_reel(str(short_mp4), caption, cfg)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"Instagram: {e}")
+        elif cfg.get("instagram", {}).get("enabled"):
+            log("  no IG_ACCESS_TOKEN secret: skipping Instagram")
+        if cfg.get("facebook", {}).get("enabled") and facebook.have_credentials():
+            try:
+                log("  posting Facebook Page Reel")
+                facebook.post_reel(str(short_mp4), caption, cfg)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"Facebook: {e}")
+
     if not args.demo:
         log("5/5 Saving history")
         history.append({"date": dt.date.today().isoformat(), "format": fmt, "category": category,
-                        "title": v.title, "video_id": ids["video"], "short_id": ids["short"]})
+                        "title": v.title, "video_id": ids["video"], "short_id": ids["short"], "instagram": ig_link})
         hist_path.write_text(json.dumps(history, indent=2) + "\n")
         if os.environ.get("GITHUB_STEP_SUMMARY"):
             with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
@@ -161,8 +182,10 @@ def main() -> int:
                 for k, val in ids.items():
                     if val:
                         f.write(f"- {k}: https://youtu.be/{val}\n")
+    for e in errors:
+        log(f"::error::{e}")
     log("Done")
-    return 0
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

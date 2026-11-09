@@ -87,5 +87,24 @@
       "documentary"
     ],
     "playlist_id": ""
+  },
+  "instagram": {
+    "enabled": true,
+    "graph_version": "v23.0",
+    "hashtags": [
+      "#history",
+      "#facts",
+      "#didyouknow",
+      "#historyfacts",
+      "#funfacts",
+      "#learnsomethingnew",
+      "#reels",
+      "#explore",
+      "#trivia",
+      "#dailycurio"
+    ]
+  },
+  "facebook": {
+    "enabled": true
   }
 }
