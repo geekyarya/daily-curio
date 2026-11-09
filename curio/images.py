@@ -149,7 +149,13 @@ def cloudflare_account_id() -> str:
             os.environ["CLOUDFLARE_ACCOUNT_ID"] = acct
             print(f"  using Cloudflare account {accounts[0].get('name', '')} (looked up from the token)", flush=True)
         else:
-            print(f"  could not look up the Cloudflare account from the token: {r.text[:200]}", flush=True)
+            msg = r.text[:200]
+            if "Invalid access token" in msg or r.status_code in (401, 403):
+                raise RuntimeError("Cloudflare rejected CLOUDFLARE_API_TOKEN (invalid token). Create or roll a token with "
+                                   "the Workers AI permission and paste the long value shown once into the GitHub secret.")
+            print(f"  could not look up the Cloudflare account from the token: {msg}", flush=True)
+    except RuntimeError:
+        raise
     except Exception as e:  # noqa: BLE001
         print(f"  Cloudflare account lookup failed: {e}", flush=True)
     return acct
