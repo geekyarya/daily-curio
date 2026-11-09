@@ -2,7 +2,7 @@ name: Daily video + Short
 
 on:
   schedule:
-    - cron: "17 13 * * *"   # every day at 13:17 UTC (edit to taste)
+    - cron: "23 0 * * *"    # every day at 00:23 UTC, just after the free image allowance resets
   push:                     # changing this file starts a run (preview unless it contains "publish=yes")
     branches: [main]
     paths: [".github/preview-request"]

@@ -45,7 +45,7 @@ A **second Gemini pass works as a fact-checker** and rejects the script if any c
 
 ## Running it
 
-- **Automatically** every day at 13:17 UTC. Change the `cron` line in `.github/workflows/daily-video.yml`.
+- **Automatically** every day at 00:23 UTC (right after Cloudflare's free allowance resets). Change the `cron` line in `.github/workflows/daily-video.yml`.
 - **By hand:** Actions → *Daily video + Short* → *Run workflow*. You can pick the format (`auto`, `top10`, `top5`, `story`), give a topic such as *"Strange laws of medieval England"*, and tick *dry run* to make the videos without uploading.
 - **Preview without uploading:** edit `.github/preview-request` and push. Optional lines `format=top5` and `topic=...` choose what to make.
 - Download the results from the run page → **Artifacts**: `video.mp4`, `short.mp4`, `thumbnail.jpg`, `video.srt`, `video.json`.
