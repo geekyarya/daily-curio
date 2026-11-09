@@ -35,7 +35,7 @@ class ImageGen:
     @staticmethod
     def _available(p: str) -> bool:
         if p.startswith("cloudflare"):
-            return bool(os.environ.get("CLOUDFLARE_ACCOUNT_ID") and os.environ.get("CLOUDFLARE_API_TOKEN"))
+            return bool(os.environ.get("CLOUDFLARE_API_TOKEN") and cloudflare_account_id())
         if p == "pollinations":  # the anonymous endpoint is only used for --demo previews
             return bool(os.environ.get("POLLINATIONS_API_KEY") or os.environ.get("KIDTOON_ALLOW_ANON"))
         return True
@@ -97,7 +97,7 @@ class ImageGen:
         return buf.getvalue()
 
     def _cf(self, model: str, **kw) -> requests.Response:
-        url = CF_URL.format(acct=os.environ["CLOUDFLARE_ACCOUNT_ID"], model=model)
+        url = CF_URL.format(acct=cloudflare_account_id(), model=model)
         r = requests.post(url, headers={"Authorization": f"Bearer {os.environ['CLOUDFLARE_API_TOKEN']}"},
                           timeout=180, **kw)
         if r.status_code == 429 or (r.status_code >= 400 and "neuron" in r.text.lower()):
@@ -154,6 +154,27 @@ class ImageGen:
 
 class QuotaError(RuntimeError):
     pass
+
+
+def cloudflare_account_id() -> str:
+    """CLOUDFLARE_ACCOUNT_ID if set, otherwise the account the API token belongs to."""
+    acct = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
+    token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
+    if acct or not token:
+        return acct
+    try:
+        r = requests.get("https://api.cloudflare.com/client/v4/accounts",
+                         headers={"Authorization": f"Bearer {token}"}, timeout=30)
+        accounts = r.json().get("result") or []
+        if accounts:
+            acct = accounts[0]["id"]
+            os.environ["CLOUDFLARE_ACCOUNT_ID"] = acct
+            print(f"  using Cloudflare account {accounts[0].get('name', '')} (looked up from the token)", flush=True)
+        else:
+            print(f"  could not look up the Cloudflare account from the token: {r.text[:200]}", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"  Cloudflare account lookup failed: {e}", flush=True)
+    return acct
 
 
 def cover(img: Image.Image, size: tuple[int, int]) -> Image.Image:
