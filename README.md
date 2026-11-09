@@ -39,7 +39,7 @@ A **second Gemini pass works as a fact-checker** and rejects the script if any c
 1. **Secrets** (repo Settings → Secrets and variables → Actions):
    - `GEMINI_API_KEY`: from https://aistudio.google.com/apikey
    - `CLOUDFLARE_API_TOKEN`: Cloudflare → Manage account → Account API tokens → Create token, with the **Workers AI** permission. The account ID is looked up automatically. You can also set `CLOUDFLARE_ACCOUNT_ID`.
-   - `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET`, `YOUTUBE_REFRESH_TOKEN`: run `python scripts/get_youtube_token.py client_secret.json` on your computer. The Google Cloud steps are in that file.
+   - `YT_TOKEN`: one JSON secret, `{"client_id": "...", "client_secret": "...", "refresh_token": "...", "token_uri": "https://oauth2.googleapis.com/token"}`. Get the refresh token from https://developers.google.com/oauthplayground using your own **Web application** OAuth client (redirect URI `https://developers.google.com/oauthplayground`). Use the scopes `youtube.upload`, plus `youtube.force-ssl` for captions. Sign in as the channel owner and pick this channel. The consent screen must be **In production**, or the token expires in 7 days. Separate `YOUTUBE_CLIENT_ID` / `YOUTUBE_CLIENT_SECRET` / `YOUTUBE_REFRESH_TOKEN` secrets also work.
 2. **Variables** (optional): `PRIVACY_STATUS` (`private` by default, or `unlisted` / `public`), and `YOUTUBE_PLAYLIST_ID`.
 3. **Channel art**: upload `assets/branding/banner.png` and `assets/branding/profile.png` in YouTube Studio → Customization → Branding.
 

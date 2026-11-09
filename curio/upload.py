@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import os
 import time
 from pathlib import Path
@@ -15,14 +16,17 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googlea
 
 
 def client():
-    creds = Credentials(
-        token=None,
-        refresh_token=os.environ["YOUTUBE_REFRESH_TOKEN"],
-        client_id=os.environ["YOUTUBE_CLIENT_ID"],
-        client_secret=os.environ["YOUTUBE_CLIENT_SECRET"],
-        token_uri="https://oauth2.googleapis.com/token",
-        scopes=SCOPES,
-    )
+    """Credentials from YT_TOKEN (one JSON secret, same as the Zero Masala setup) or three separate secrets."""
+    blob = os.environ.get("YT_TOKEN", "").strip()
+    if blob:
+        info = json.loads(blob)
+        cid, secret, refresh = info["client_id"], info["client_secret"], info["refresh_token"]
+        token_uri = info.get("token_uri", "https://oauth2.googleapis.com/token")
+    else:
+        cid, secret = os.environ["YOUTUBE_CLIENT_ID"], os.environ["YOUTUBE_CLIENT_SECRET"]
+        refresh, token_uri = os.environ["YOUTUBE_REFRESH_TOKEN"], "https://oauth2.googleapis.com/token"
+    # no scopes passed: the token keeps whatever was granted (upload only is fine; captions need force-ssl)
+    creds = Credentials(token=None, refresh_token=refresh, client_id=cid, client_secret=secret, token_uri=token_uri)
     return build("youtube", "v3", credentials=creds, cache_discovery=False)
 
 
@@ -69,7 +73,7 @@ def upload(yt, video: Path, title: str, description: str, tags: list[str], cfg: 
         _try(log, "thumbnail (needs a phone-verified channel)", lambda: yt.thumbnails().set(
             videoId=vid, media_body=MediaFileUpload(str(thumb), mimetype="image/jpeg")).execute())
     if srt:
-        _try(log, "captions", lambda: yt.captions().insert(
+        _try(log, "captions (needs the youtube.force-ssl scope)", lambda: yt.captions().insert(
             part="snippet",
             body={"snippet": {"videoId": vid, "language": cfg["language"], "name": "English", "isDraft": False}},
             media_body=MediaFileUpload(str(srt), mimetype="application/octet-stream")).execute())
