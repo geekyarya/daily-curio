@@ -21,8 +21,8 @@ history. Recently used themes are skipped. Narration, titles, on-screen text and
 
 ## What the videos look like
 
-- Painted documentary illustrations with slow camera moves, crossfades and subtle dust, embers or snow.
-- A title card, then an animated **"#7 · The Emperor Who Fought the Sea"** card at the start of each list item (or each chapter of a story).
+- Vivid digital illustrations with slow camera moves, crossfades and subtle dust, embers or snow.
+- A title card, then an animated **"#7 · समुद्र का सबसे गहरा राज़"** card at the start of each fact.
 - The narrator ends with a recap and a comments question. English captions are uploaded, and the thumbnail is the image plus 2–4 huge words.
 - Shorts are 9:16 with burned-in captions. They're scheduled to go live 6 hours after the main video.
 
