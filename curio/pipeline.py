@@ -69,6 +69,8 @@ def main() -> int:
         os.environ["CURIO_ALLOW_ANON"] = "1"  # low-quality preview art; never used for real uploads
         cfg["image"]["providers"] = ["pollinations"]
     gen = ImageGen(cfg, None, log)
+    if not args.demo and not os.environ.get("GEMINI_API_KEY"):
+        raise SystemExit("Missing secret: add GEMINI_API_KEY in the repo's Settings → Secrets and variables → Actions")
 
     fmt, category = plan(cfg, history, args.format, args.topic)
     log(f"1/5 Writing a {fmt} video ({args.topic or category})")

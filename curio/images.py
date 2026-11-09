@@ -27,7 +27,7 @@ class ImageGen:
         self.style = cfg["image"]["style"]
         self.providers = [p for p in cfg["image"]["providers"] if self._available(p)]
         if not self.providers:
-            raise RuntimeError("No image provider configured: set the CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN secrets")
+            raise RuntimeError("Missing secret: add CLOUDFLARE_API_TOKEN in the repo's Settings → Secrets and variables → Actions")
         self.dead: set[str] = set()
         self.count = 0
 
