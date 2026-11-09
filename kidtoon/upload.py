@@ -32,7 +32,8 @@ def upload(yt, video: Path, title: str, description: str, tags: list[str], cfg: 
     status = {
         "privacyStatus": privacy,
         "selfDeclaredMadeForKids": True,   # COPPA: required for children's content
-        "containsSyntheticMedia": True,    # AI-generated content disclosure
+        # YouTube's "altered or synthetic content" label; not required for clearly animated content
+        "containsSyntheticMedia": bool(cfg.get("ai_disclosure")),
         "embeddable": True,
         "license": "youtube",
     }

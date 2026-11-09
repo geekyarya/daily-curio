@@ -82,8 +82,9 @@ def main() -> int:
                    lesson=ep.lesson, title_image=None, seed=seed + 1, tag="short", log=log)
 
     tags = list(dict.fromkeys(ep.tags + cfg["youtube"]["default_tags"]))
-    footer = (f"\n\nJoin Tumble, Pippa and Moss for gentle stories in {cfg['channel_name']}.\n"
-              "Story, pictures and voices were created with the help of AI tools and reviewed for kid-friendly content.")
+    footer = f"\n\nJoin Tumble, Pippa and Moss for gentle stories in {cfg['channel_name']}."
+    if cfg.get("ai_disclosure"):
+        footer += "\nStory, pictures and voices were created with the help of AI tools and reviewed for kid-friendly content."
     ep_desc = f"{ep.description}\n\nToday's lesson: {ep.lesson}{footer}"
     short_desc = f"{ep.short.description}\n\nWatch the full story \"{ep.title}\" on our channel.{footer}\n#shorts"
     (out / "description.txt").write_text(ep_desc)

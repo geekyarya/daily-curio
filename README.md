@@ -50,7 +50,8 @@ Every day, a GitHub Actions workflow makes and uploads a **~6-minute illustrated
 ## Important YouTube rules
 
 - **Upload audit.** API projects created after July 2020 can only upload **private** videos until they pass Google's free [YouTube API audit](https://support.google.com/youtube/contact/yt_api_form). Apply early, and publish by hand in YouTube Studio until then.
-- **Made for Kids** (COPPA) and the **AI content** label are set automatically on every upload.
+- **Made for Kids** (COPPA) is set automatically on every upload.
+- **AI label:** `"ai_disclosure": false` in `config.json` leaves the AI wording out of descriptions and leaves YouTube's "altered or synthetic content" box unticked. YouTube only requires that box for realistic content; animated stories are exempt. Set it to `true` whenever you want to tell viewers.
 - **Monetization.** YouTube can refuse to monetise mass-produced or repetitive videos. Watch the episodes, keep the stories varied, and add your own touches (characters, music, intro).
 - **Thumbnails** need a phone-verified channel.
 
