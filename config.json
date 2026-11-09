@@ -8,7 +8,7 @@
   "burn_captions": false,
   "short_delay_hours": 6,
 
-  "text_models": ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"],
+  "text_models": ["gemini-3.8-flash"],
 
   "image": {
     "providers": ["cloudflare_flux2"],
