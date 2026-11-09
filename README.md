@@ -42,7 +42,7 @@ Every day, a GitHub Actions workflow makes and uploads a **~6-minute illustrated
 
 5. **Optional repo variables**: `PRIVACY_STATUS` (`private` by default, or `unlisted` / `public`) and `YOUTUBE_PLAYLIST_ID`.
 
-6. **First run**: go to Actions → *Daily episode + Short* → *Run workflow* with **dry_run** ticked.
+6. **First run**: edit `.github/preview-request` (any change) and push it, which starts a dry run. Or go to Actions → *Daily episode + Short* → *Run workflow* with **dry_run** ticked.
    - The first run designs the 3 characters and commits them to `assets/cast/`.
    - Download the videos from the run's artifacts and check them.
    - If you don't like a character, replace its PNG with your own drawing, or delete it so it's redesigned on the next run.
