@@ -9,6 +9,7 @@ Providers, tried in order (config.image.providers):
 from __future__ import annotations
 
 import base64
+import json
 import io
 import os
 import time
@@ -137,6 +138,12 @@ class QuotaError(RuntimeError):
 def cloudflare_account_id() -> str:
     """CLOUDFLARE_ACCOUNT_ID if set, otherwise the account the API token belongs to."""
     acct = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
+    if not acct:  # not a secret (it appears in every dashboard URL), so it may also live in config.json
+        try:
+            cfg = json.loads((Path(__file__).resolve().parent.parent / "config.json").read_text())
+            acct = (cfg.get("image", {}).get("cloudflare_account_id") or "").strip()
+        except Exception:  # noqa: BLE001
+            acct = ""
     token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
     if acct or not token:
         return acct
@@ -153,7 +160,9 @@ def cloudflare_account_id() -> str:
             if "Invalid access token" in msg or r.status_code in (401, 403):
                 raise RuntimeError("Cloudflare rejected CLOUDFLARE_API_TOKEN (invalid token). Create or roll a token with "
                                    "the Workers AI permission and paste the long value shown once into the GitHub secret.")
-            print(f"  could not look up the Cloudflare account from the token: {msg}", flush=True)
+            raise RuntimeError("This Cloudflare token can't look up its account. Add your Account ID (the 32-character "
+                               "code in the dashboard URL) as the CLOUDFLARE_ACCOUNT_ID repository variable or secret, "
+                               "or as image.cloudflare_account_id in config.json.")
     except RuntimeError:
         raise
     except Exception as e:  # noqa: BLE001
