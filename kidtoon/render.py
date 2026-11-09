@@ -62,14 +62,15 @@ def text_block(text: str, size: int, max_w: int, fill="#ffffff", stroke="#3d2a73
     sw = max(4, size // 9)
     lh = int(size * 1.15)
     probe = ImageDraw.Draw(Image.new("L", (1, 1)))
-    w = int(max(probe.textlength(l, font=fnt) for l in lines)) + sw * 6
-    h = lh * len(lines) + sw * 6 + size // 4
+    pad = sw * 5  # room for the outline + blurred shadow, so it never gets clipped into a visible box
+    w = int(max(probe.textlength(l, font=fnt) for l in lines)) + pad * 2
+    h = lh * (len(lines) - 1) + size + pad * 2 + size // 4
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     shadow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     ds, d = ImageDraw.Draw(shadow), ImageDraw.Draw(img)
     for i, l in enumerate(lines):
         lw = d.textlength(l, font=fnt)
-        x, y = (w - lw) / 2, sw * 2 + i * lh
+        x, y = (w - lw) / 2, pad + i * lh
         ds.text((x + sw, y + sw), l, font=fnt, fill=(0, 0, 0, 130), stroke_width=sw, stroke_fill=(0, 0, 0, 130))
         d.text((x, y), l, font=fnt, fill=fill, stroke_width=sw, stroke_fill=stroke)
     return Image.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(sw)), img)
