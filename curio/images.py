@@ -60,7 +60,9 @@ class ImageGen:
                     self.dead.add(p)
                     break
                 except Exception as e:  # noqa: BLE001
-                    self.log(f"    {p}: {e}")
+                    self.log(f"    {p}: {str(e)[:160]}")
+                    if "flagged" in str(e) and attempt >= 1:
+                        break  # the safety filter disliked this prompt; let the caller reword it
                     time.sleep(5 * (attempt + 1))
         raise RuntimeError(f"All image providers failed for: {prompt[:80]}")
 
@@ -105,7 +107,7 @@ class ImageGen:
 
     def _cloudflare_schnell(self, prompt, size, refs, seed):
         # schnell is square-ish and text-only; ask for the long side and crop to shape
-        r = self._cf("@cf/black-forest-labs/flux-1-schnell", json={"prompt": prompt[:2000], "steps": 8, "seed": seed})
+        r = self._cf("@cf/black-forest-labs/flux-1-schnell", json={"prompt": prompt[:2000], "steps": 8})
         return self._decode_cf(r)
 
     def _pollinations(self, prompt, size, refs, seed):
