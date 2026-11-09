@@ -1,4 +1,4 @@
-"""Upload episodes and Shorts to YouTube as Made-for-Kids content."""
+"""Upload videos and Shorts to YouTube."""
 from __future__ import annotations
 
 import datetime as dt
@@ -31,7 +31,7 @@ def upload(yt, video: Path, title: str, description: str, tags: list[str], cfg: 
     privacy = os.environ.get("PRIVACY_STATUS", "private")
     status = {
         "privacyStatus": privacy,
-        "selfDeclaredMadeForKids": True,   # COPPA: required for children's content
+        "selfDeclaredMadeForKids": bool(cfg["youtube"].get("made_for_kids", False)),
         # YouTube's "altered or synthetic content" label; not required for clearly animated content
         "containsSyntheticMedia": bool(cfg.get("ai_disclosure")),
         "embeddable": True,

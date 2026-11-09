@@ -1,9 +1,8 @@
 """Free image generation.
 
 Providers, tried in order (config.image.providers):
-  cloudflare_flux2   FLUX.2 [klein] on Cloudflare Workers AI. Takes the cast reference sheets as input images,
-                     so characters look the same in every shot. Free: 10,000 neurons/day (~60-80 images).
-  cloudflare_schnell FLUX.1 schnell on Workers AI: cheaper, text-only (no reference images).
+  cloudflare_flux2   FLUX.2 [klein] on Cloudflare Workers AI (best quality). Free: 10,000 neurons/day (~60 images).
+  cloudflare_schnell FLUX.1 schnell on Workers AI: cheaper; used automatically if the daily allowance runs out.
   pollinations       gen.pollinations.ai with POLLINATIONS_API_KEY, or the anonymous classic endpoint
                      (slow: one image per ~45s, lower quality, watermark cropped off).
 """
@@ -23,8 +22,8 @@ CF_URL = "https://api.cloudflare.com/client/v4/accounts/{acct}/ai/run/{model}"
 
 
 class ImageGen:
-    def __init__(self, cfg: dict, cast_dir: Path, log=print):
-        self.cfg, self.cast_dir, self.log = cfg, cast_dir, log
+    def __init__(self, cfg: dict, ref_dir: Path | None = None, log=print):
+        self.cfg, self.cast_dir, self.log = cfg, ref_dir, log
         self.style = cfg["image"]["style"]
         self.providers = [p for p in cfg["image"]["providers"] if self._available(p)]
         if not self.providers:
@@ -37,7 +36,7 @@ class ImageGen:
         if p.startswith("cloudflare"):
             return bool(os.environ.get("CLOUDFLARE_API_TOKEN") and cloudflare_account_id())
         if p == "pollinations":  # the anonymous endpoint is only used for --demo previews
-            return bool(os.environ.get("POLLINATIONS_API_KEY") or os.environ.get("KIDTOON_ALLOW_ANON"))
+            return bool(os.environ.get("POLLINATIONS_API_KEY") or os.environ.get("CURIO_ALLOW_ANON"))
         return True
 
     # ------------------------------------------------------------------ public
@@ -64,31 +63,9 @@ class ImageGen:
                     time.sleep(5 * (attempt + 1))
         raise RuntimeError(f"All image providers failed for: {prompt[:80]}")
 
-    def ensure_cast(self) -> None:
-        """Create a reference sheet for each character once; reuse forever (replace the PNGs to redesign)."""
-        self.cast_dir.mkdir(parents=True, exist_ok=True)
-        for name, c in self.cfg["cast"].items():
-            out = self.cast_dir / f"{name}.png"
-            if out.exists():
-                continue
-            self.log(f"  designing {name}")
-            prompt = (f"{self.style}. Character design reference sheet of {name}, {c['look']}. Full body, standing, "
-                      "facing the viewer with a friendly smile, centered, simple plain cream background. "
-                      "Exactly one single character in one pose: no extra views, no turnaround, no small copies, "
-                      "nothing else in the picture.")
-            tmp = out.with_suffix(".jpg")
-            self.generate(prompt, (768, 768), [], seed=sum(map(ord, name)), out=tmp)
-            Image.open(tmp).save(out)
-            tmp.unlink()
-
     # ------------------------------------------------------------------ helpers
     def _prompt(self, prompt: str, refs: list[str]) -> str:
-        if not refs:
-            return f"{self.style}. {prompt}"
-        looks = "; ".join(f"{n} is {self.cfg['cast'][n]['look']} (exactly as in reference image {i + 1})"
-                          for i, n in enumerate(refs))
-        return (f"{self.style}. {prompt}. Characters: {looks}. Keep every character's design, colours and "
-                "proportions identical to their reference image; do not copy the reference backgrounds.")
+        return f"{self.style}. {prompt}"
 
     def _ref_bytes(self, name: str) -> bytes:
         img = Image.open(self.cast_dir / f"{name}.png").convert("RGB")

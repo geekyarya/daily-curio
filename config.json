@@ -1,46 +1,42 @@
 {
-  "channel_name": "Maple Meadow Friends",
-  "audience_age": "3-6",
+  "channel_name": "Daily Curio",
+  "tagline": "History & fascinating facts, every day",
+  "audience": "curious general audiences (teens and adults)",
   "language": "en",
-  "episode_minutes": 6,
-  "short_seconds": 50,
   "fps": 24,
   "burn_captions": false,
   "short_delay_hours": 6,
   "ai_disclosure": false,
 
+  "formats": ["top10", "story", "top5"],
+  "format_specs": {
+    "top10": {"label": "Top 10 list", "items": 10, "words": 1300, "shots": "32-40"},
+    "top5":  {"label": "Top 5 list",  "items": 5,  "words": 750,  "shots": "20-26"},
+    "story": {"label": "history story (one event, place or person told as a documentary)", "items": 0, "words": 1150, "shots": "28-36"}
+  },
+  "short_seconds": 50,
+  "categories": [
+    "ancient history", "medieval history", "modern history", "strange history", "lost civilizations",
+    "inventions and how they changed life", "everyday objects and their origins", "food and drink",
+    "the human body", "animals", "space", "oceans", "geography and places", "language and words",
+    "science you can see every day", "famous mysteries and what we actually know"
+  ],
+
   "text_models": ["gemini-3.8-flash"],
 
   "image": {
-    "providers": ["cloudflare_flux2"],
-    "_providers_help": "Add \"pollinations\" (needs POLLINATIONS_API_KEY) or \"cloudflare_schnell\" as fallbacks; they cannot use the character references, so characters may look different.",
+    "providers": ["cloudflare_flux2", "cloudflare_schnell"],
     "landscape": [1344, 768],
     "portrait": [768, 1344],
-    "style": "children's picture-book illustration, soft gouache and watercolor textures, warm pastel colors, rounded friendly shapes, gentle golden lighting, cozy and whimsical, highly detailed 2D storybook art, no text, no letters, no watermark"
+    "style": "rich painterly documentary illustration, cinematic composition, dramatic natural lighting, detailed oil-painting texture, museum-quality historical art, no text, no letters, no captions, no watermark"
   },
 
-  "cast": {
-    "Tumble": {
-      "look": "a small chubby orange bear cub with a cream-colored round tummy and muzzle, round ears with pink insides, big shiny dark eyes, rosy cheeks, wearing a little green scarf",
-      "personality": "cheerful, curious and brave, loves exploring, sometimes rushes ahead",
-      "voice": {"voice": "en-US-AnaNeural", "rate": "+0%", "pitch": "-4Hz"}
-    },
-    "Pippa": {
-      "look": "a tiny round sky-blue songbird with a pale blue belly, a little curled feather tuft on her head, small orange beak, big sparkly eyes, rosy cheeks",
-      "personality": "chatty and musical, loves singing, counting and asking questions",
-      "voice": {"voice": "en-US-AnaNeural", "rate": "+10%", "pitch": "+18Hz"}
-    },
-    "Moss": {
-      "look": "a gentle old green tortoise with a domed brown patterned shell, kind sleepy eyes, round spectacles, a tiny white beard tuft",
-      "personality": "slow, calm and wise, gives gentle advice and tells jokes",
-      "voice": {"voice": "en-US-GuyNeural", "rate": "-18%", "pitch": "-6Hz"}
-    }
-  },
-  "narrator_voice": {"voice": "en-GB-SoniaNeural", "rate": "-8%", "pitch": "+0Hz"},
+  "narrator_voice": {"voice": "en-GB-RyanNeural", "rate": "-4%", "pitch": "+0Hz"},
 
   "youtube": {
+    "made_for_kids": false,
     "category_id": "27",
-    "default_tags": ["kids cartoon", "stories for kids", "preschool", "bedtime story", "animated story", "toddler learning"],
+    "default_tags": ["facts", "history", "top 10", "did you know", "interesting facts", "documentary"],
     "playlist_id": ""
   }
 }

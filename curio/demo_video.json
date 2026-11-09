@@ -1,0 +1,35 @@
+{
+  "title": "5 Everyday Things the Romans Invented First",
+  "description": "You use Roman ideas every single day without noticing. From concrete to newspapers, here are five everyday things the ancient Romans got to first.\n\n#history #romans #facts",
+  "tags": ["roman inventions", "ancient rome facts", "history facts", "top 5"],
+  "thumbnail_visual": "A bustling ancient Roman forum at golden hour with marble columns, a crowd in togas and a giant concrete dome rising behind",
+  "thumbnail_text": "ROME DID IT FIRST",
+  "shots": [
+    {"card": "", "visual": "Wide view of ancient Rome at sunrise, marble temples and the dome of the Pantheon glowing", "camera": "zoom_in", "effect": "dust",
+     "narration": "You probably used something Roman before breakfast this morning. Here are five everyday things the ancient Romans got to first."},
+    {"card": "#5 · Concrete That Lasts", "visual": "Roman builders pouring concrete into wooden frames beside a half-built harbour wall", "camera": "pan_right", "effect": "dust",
+     "narration": "Number five: concrete. Roman builders mixed lime with volcanic ash, and some of their harbour walls have survived two thousand years of seawater."},
+    {"card": "#4 · The First Newspaper", "visual": "A Roman crowd reading a large public notice board in the forum", "camera": "zoom_out", "effect": "none",
+     "narration": "Number four: the daily news. Rome posted public notices called the Acta Diurna, sharing announcements, trials and even births and marriages."},
+    {"card": "#3 · Heated Floors", "visual": "Cross-section of a Roman bathhouse showing a furnace and hot air flowing under raised stone floors", "camera": "pan_left", "effect": "embers",
+     "narration": "Number three: underfloor heating. The hypocaust pushed hot air from a furnace beneath raised floors, keeping bathhouses and villas cosy."},
+    {"card": "#2 · Shopping Malls", "visual": "Trajan's Market, a multi-level brick arcade full of small shops and shoppers", "camera": "pan_up", "effect": "none",
+     "narration": "Number two: the shopping centre. Trajan's Market stacked dozens of shops over several levels, and you can still walk through it today."},
+    {"card": "#1 · Fast Food", "visual": "A Roman street counter with clay jars set into a painted stone bar, people buying food", "camera": "zoom_in", "effect": "dust",
+     "narration": "And number one: fast food. Busy Romans grabbed hot meals from street counters called thermopolia. One in Pompeii still has its painted menu art."},
+    {"card": "", "visual": "Sunset over the Roman Forum ruins with modern city lights beyond", "camera": "zoom_out", "effect": "fireflies",
+     "narration": "Which one surprised you most? Tell me in the comments, and subscribe for a new video every day."}
+  ],
+  "short": {
+    "title": "Romans Had Fast Food?!",
+    "description": "Two thousand years ago, Romans were already grabbing takeaway.",
+    "shots": [
+      {"card": "", "visual": "Vertical view of a busy Roman street with a food counter", "camera": "zoom_in", "effect": "dust",
+       "narration": "Romans had fast food two thousand years ago."},
+      {"card": "", "visual": "Vertical close-up of clay jars set into a painted stone counter", "camera": "pan_up", "effect": "none",
+       "narration": "Street counters called thermopolia served hot meals to busy city workers who had no kitchen at home."},
+      {"card": "", "visual": "Vertical view of Pompeii ruins with a preserved painted food counter", "camera": "zoom_out", "effect": "dust",
+       "narration": "In Pompeii, one counter still shows its colourful painted menu art. Takeaway is very, very old."}
+    ]
+  }
+}

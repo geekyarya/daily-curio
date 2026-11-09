@@ -1,12 +1,13 @@
-"""Turn illustrated shots + voices into a finished video (landscape episode or vertical Short).
+"""Turn illustrated shots + narration into a finished video (landscape video or vertical Short).
 
 Each shot is a still illustration brought to life with an eased camera move (Ken Burns), crossfades between
-shots, light animated particle overlays (snow, sparkles, fireflies...), an animated title card and an end card.
+shots, subtle particle overlays (dust, embers, snow...), list-item title cards, an animated intro and an end card.
 """
 from __future__ import annotations
 
 import math
 import random
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,23 +17,26 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from . import audio
 from .images import cover
-from .story import Shot
+from .script import Shot
 
 ROOT = Path(__file__).resolve().parent.parent
-FONT_FILE = ROOT / "assets" / "fonts" / "Fredoka.ttf"
+FONTS = {"sans": (ROOT / "assets" / "fonts" / "Montserrat.ttf", "ExtraBold"),
+         "serif": (ROOT / "assets" / "fonts" / "Cinzel.ttf", "Black")}
 FALLBACK_FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
 
 XFADE = 0.7
-PAD_IN, PAD_OUT, GAP, MIN_SHOT = 0.5, 0.45, 0.3, 3.0
+PAD_IN, PAD_OUT, GAP, MIN_SHOT = 0.25, 0.3, 0.12, 3.0
+CARD_SECONDS = 3.4
 
 
 # ----------------------------------------------------------------------------- text
 
-def font(size: int) -> ImageFont.FreeTypeFont:
-    if FONT_FILE.exists():
-        f = ImageFont.truetype(str(FONT_FILE), size)
+def font(size: int, family: str = "sans") -> ImageFont.FreeTypeFont:
+    path, weight = FONTS[family]
+    if path.exists():
+        f = ImageFont.truetype(str(path), size)
         try:
-            f.set_variation_by_name("Bold")
+            f.set_variation_by_name(weight)
         except Exception:  # noqa: BLE001
             pass
         return f
@@ -55,9 +59,9 @@ def wrap(text: str, fnt, max_w: int) -> list[str]:
     return lines + ([cur] if cur else [])
 
 
-def text_block(text: str, size: int, max_w: int, fill="#ffffff", stroke="#3d2a73") -> Image.Image:
+def text_block(text: str, size: int, max_w: int, fill="#ffffff", stroke="#1b1408", family: str = "sans") -> Image.Image:
     """Bold outlined text with a soft shadow, as a transparent image."""
-    fnt = font(size)
+    fnt = font(size, family)
     lines = wrap(text, fnt, max_w)
     sw = max(4, size // 9)
     lh = int(size * 1.15)
@@ -101,7 +105,8 @@ def pop(x: float) -> float:
 # ----------------------------------------------------------------------------- particles
 
 class Particles:
-    COUNTS = {"snow": 70, "rain": 90, "leaves": 22, "petals": 26, "bubbles": 22, "sparkles": 30, "fireflies": 26}
+    COUNTS = {"snow": 70, "rain": 90, "leaves": 22, "petals": 26, "bubbles": 22, "sparkles": 30, "fireflies": 26,
+              "dust": 55, "embers": 45}
 
     def __init__(self, kind: str, W: int, H: int, seed: int):
         self.kind, self.W, self.H = kind, W, H
@@ -152,6 +157,18 @@ class Particles:
                 ImageDraw.Draw(im).polygon([(c, 0), (c * 1.15, c * .85), (s, c), (c * 1.15, c * 1.15), (c, s),
                                             (c * .85, c * 1.15), (0, c), (c * .85, c * .85)], fill=(255, 245, 190, 255))
                 out.append(im.filter(ImageFilter.GaussianBlur(0.6)))
+        elif kind == "dust":
+            for r in (3, 4, 6):
+                s = int(r * 5 * u) + 2
+                im = canvas(s)
+                ImageDraw.Draw(im).ellipse((s * .3, s * .3, s * .7, s * .7), fill=(255, 240, 210, 150))
+                out.append(im.filter(ImageFilter.GaussianBlur(s * .12)))
+        elif kind == "embers":
+            for r, c in ((4, (255, 170, 60)), (6, (255, 120, 40)), (5, (255, 210, 120))):
+                s = int(r * 6 * u) + 2
+                im = canvas(s)
+                ImageDraw.Draw(im).ellipse((s * .32, s * .32, s * .68, s * .68), fill=c + (255,))
+                out.append(im.filter(ImageFilter.GaussianBlur(s * .1)))
         elif kind == "fireflies":
             s = int(36 * u)
             im = canvas(s)
@@ -177,6 +194,14 @@ class Particles:
             elif k == "sparkles":
                 x, y = x0 * W, y0 * H * 0.8
                 scale = max(0.0, math.sin(t * 2.2 * sp + ph)) ** 3
+            elif k == "dust":
+                x = (x0 * W + t * 14 * sp + math.sin(t * .5 + ph) * 40) % W
+                y = (y0 * H - t * 9 * sp + math.cos(t * .4 + ph) * 30) % H
+                scale = 0.6 + 0.4 * math.sin(t * 1.5 * sp + ph)
+            elif k == "embers":
+                x = x0 * W + math.sin(t * 1.7 * sp + ph) * 35
+                y = H + 30 - ((1 - y0) * H + t * 140 * sp) % (H + 60)
+                scale = 0.5 + 0.5 * abs(math.sin(t * 4 * sp + ph))
             elif k == "fireflies":
                 x, y = x0 * W + math.sin(t * .4 * sp + ph) * 60, y0 * H * .85 + math.cos(t * .5 * sp + ph) * 40
                 scale = 0.55 + 0.45 * math.sin(t * 3 * sp + ph)
@@ -204,12 +229,17 @@ class Timeline:
     duration: float = 0.0
 
 
+def sentences(text: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'“])", text.strip())
+    return [p for p in parts if p.strip()]
+
+
 def record(shots: list[Shot], cfg: dict, work: Path, intro: float, outro: float, tag: str, log=print) -> tuple[Timeline, Path]:
-    """Voice every line and lay the shots out on a timeline."""
-    voices = {n: c["voice"] for n, c in cfg["cast"].items()} | {"narrator": cfg["narrator_voice"]}
+    """Voice every sentence of narration and lay the shots out on a timeline."""
+    voice_cfg = cfg["narrator_voice"]
     sr = audio.SR
     tl = Timeline(intro=intro, outro=outro)
-    chunks = [np.zeros(int(sr * intro), np.float32)]
+    chunks: list[np.ndarray] = []
     n = 0  # samples so far, so timings match the audio exactly
 
     def add(x: np.ndarray):
@@ -220,17 +250,17 @@ def record(shots: list[Shot], cfg: dict, work: Path, intro: float, outro: float,
     def silence(sec: float):
         add(np.zeros(int(sr * sec), np.float32))
 
-    n = len(chunks[0])
+    silence(intro)
     idx = 0
     for shot in shots:
         s0 = n / sr
         silence(PAD_IN)
-        for line in shot.lines:
-            clip = audio.tts_line(line.text, voices.get(line.speaker, voices["narrator"]), work, f"{tag}{idx:03d}", log)
+        for sent in sentences(shot.narration):
+            clip = audio.tts_line(sent, voice_cfg, work, f"{tag}{idx:03d}", log)
             idx += 1
             t0 = n / sr
             add(clip)
-            tl.segs.append(Seg(t0, n / sr, line.speaker, line.text))
+            tl.segs.append(Seg(t0, n / sr, "narrator", sent))
             silence(GAP)
         silence(PAD_OUT)
         if n / sr - s0 < MIN_SHOT:
@@ -241,7 +271,7 @@ def record(shots: list[Shot], cfg: dict, work: Path, intro: float, outro: float,
     tl.duration = len(voice) / sr
     path = work / f"{tag}_voice.wav"
     audio.write_wav(path, voice * 0.95)
-    log(f"  {tag}: {len(tl.segs)} lines, {tl.duration:.1f}s")
+    log(f"  {tag}: {len(tl.segs)} sentences, {tl.duration:.1f}s")
     return tl, path
 
 
@@ -256,7 +286,7 @@ def write_srt(tl: Timeline, path: Path) -> None:
 
 class Film:
     def __init__(self, shots: list[Shot], images: list[Path], tl: Timeline, size: tuple[int, int], fps: int,
-                 title: str, channel: str, lesson: str, title_image: Path | None, captions: bool, seed: int):
+                 title: str, channel: str, end_line: str, title_image: Path | None, captions: bool, seed: int):
         self.tl, self.fps = tl, fps
         self.W, self.H = size
         self.portrait = self.H > self.W
@@ -268,12 +298,18 @@ class Film:
         maxw = int(self.W * 0.86)
         big = int(self.H * 0.1) if not self.portrait else int(self.W * 0.085)
         self.title_img = text_block(title, big, maxw)
-        self.channel_img = text_block(channel, int(big * 0.55), maxw, fill="#ffe27a")
-        self.end_img = text_block("The End!", int(big * 1.3), maxw, fill="#ffe27a")
-        self.lesson_img = text_block(lesson, int(big * 0.55), maxw)
+        self.channel_img = text_block(channel.upper(), int(big * 0.5), maxw, fill="#ffd34d", family="serif")
+        self.end_img = text_block("Thanks for watching!", int(big * 1.1), maxw, fill="#ffd34d")
+        self.lesson_img = text_block(end_line, int(big * 0.55), maxw)
+        self.cards = {i: text_block(s.card, int(min(self.W, self.H) * 0.075), int(self.W * 0.88), fill="#ffd34d")
+                      for i, s in enumerate(shots) if s.card}
+        band_h = int(self.H * 0.4)
+        grad = Image.linear_gradient("L").resize((self.W, band_h)).point(lambda v: int(v * 0.75))
+        self.band = Image.new("RGBA", (self.W, band_h), (8, 6, 4, 255))
+        self.band.putalpha(grad)
         self.title_bg = self._prep(title_image, 1.12) if title_image else self.src[0]
         last = self.src[-1].resize((self.W, self.H), Image.BILINEAR)
-        self.end_bg = Image.blend(last.filter(ImageFilter.GaussianBlur(14)), Image.new("RGB", last.size, "#1b1440"), 0.25)
+        self.end_bg = Image.blend(last.filter(ImageFilter.GaussianBlur(14)), Image.new("RGB", last.size, "#120c06"), 0.45)
         self.cap_cache: dict[int, Image.Image] = {}
 
     def _prep(self, path: Path, over: float) -> Image.Image:
@@ -333,6 +369,13 @@ class Film:
             f = Image.blend(f, self._shot_frame(i + 1, t), 0.5 - (b - t) / XFADE)
         if tl.intro and i == 0 and t - a < XFADE:  # dissolve from the title card into the first shot
             f = Image.blend(self._title_frame(t), f, (t - a) / XFADE)
+        if i in self.cards and t - a < CARD_SECONDS:  # list item / chapter title
+            k = min(1.0, (t - a) / 0.35, (CARD_SECONDS - (t - a)) / 0.4)
+            band = self.band.copy()
+            band.putalpha(band.getchannel("A").point(lambda v: int(v * k)))
+            f.paste(band, (0, self.H - band.height), band)
+            card = self.cards[i]
+            paste_scaled(f, card, self.W / 2, self.H * 0.83, pop((t - a) / 0.5) * (1 if k >= 1 or t - a < 1 else k))
         if self.portrait and tl.intro == 0 and t < 3.0:  # Shorts: title over the opening shot
             paste_scaled(f, self.title_img, self.W / 2, self.H * 0.17, pop(t / 0.6) * min(1.0, (3 - t) / 0.4))
         if self.captions:
@@ -372,24 +415,32 @@ class Film:
             raise RuntimeError("ffmpeg failed")
 
 
-def make_video(shots, images, cfg, work: Path, out: Path, *, portrait: bool, title: str, lesson: str,
+def make_video(shots, images, cfg, work: Path, out: Path, *, portrait: bool, title: str, end_line: str,
                title_image: Path | None, seed: int, tag: str, log=print) -> Timeline:
     size = (1080, 1920) if portrait else (1920, 1080)
-    intro, outro = (0.0, 2.5) if portrait else (4.5, 5.0)
+    intro, outro = (0.0, 2.0) if portrait else (3.0, 5.0)
     tl, voice = record(shots, cfg, work, intro, outro, tag, log)
     mixed = work / f"{tag}_mix.wav"
     audio.mix(voice, mixed, tl.duration, seed, ROOT / "assets" / "music")
-    film = Film(shots, images, tl, size, cfg["fps"], title, cfg["channel_name"], lesson, title_image,
+    film = Film(shots, images, tl, size, cfg["fps"], title, cfg["channel_name"], end_line, title_image,
                 portrait or cfg.get("burn_captions", False), seed)
     log(f"  rendering {tag} ({tl.duration:.0f}s)")
     film.encode(mixed, out, log)
     return tl
 
 
-def thumbnail(image: Path, title: str, out: Path) -> None:
+def thumbnail(image: Path, text: str, out: Path) -> None:
+    """Facts-channel thumbnail: striking image, darkened left side, 2-4 huge words."""
     img = cover(Image.open(image).convert("RGB"), (1280, 720))
-    words = title.split()
-    short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
-    tb = text_block(short, 92, 1180, fill="#fff36b", stroke="#2c1a5e")
-    paste_scaled(img, tb, 640, 30 + tb.height / 2)
-    img.save(out, quality=90)
+    shade = Image.linear_gradient("L").rotate(-90, expand=True).resize((1280, 720)).point(lambda v: int(v * 0.8))
+    img.paste(Image.new("RGB", img.size, (10, 8, 6)), (0, 0), shade)
+    words = text.upper().split()
+    lines = [" ".join(words[i:i + 2]) for i in range(0, len(words), 2)][:3]
+    blocks = [text_block(line, 130, 760, fill="#ffd34d" if n % 2 == 0 else "#ffffff", stroke="#0b0805")
+              for n, line in enumerate(lines)]
+    step = 150  # line spacing in pixels (blocks carry padding for the outline and shadow)
+    y = 360 - (step * (len(blocks) - 1) + blocks[0].height) / 2
+    for tb in blocks:
+        img.paste(tb, (20, int(y)), tb)
+        y += step
+    img.save(out, quality=92)
