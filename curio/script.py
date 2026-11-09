@@ -85,7 +85,7 @@ def validate(v: Video, fmt: str, cfg: dict) -> list[str]:
     if not 50 <= sw <= max_w:
         p.append(f"The Short must have 50-{max_w} narration words; it has {sw}.")
     if not 3 <= len(v.short.shots) <= 8:
-        p.append("The Short needs 4-7 shots.")
+        p.append("The Short needs 3-5 shots.")
     if len(v.title) > 90 or len(v.short.title) > 80:
         p.append("Titles are too long.")
     return p
@@ -94,48 +94,54 @@ def validate(v: Video, fmt: str, cfg: dict) -> list[str]:
 def write_video(cfg: dict, history: list[dict], fmt: str, category: str, topic: str, llm, log=print) -> Video:
     spec = cfg["format_specs"][fmt]
     recent = "\n".join(f"- {h['title']}" for h in history[-120:]) or "- (none yet)"
-    subject = f'The topic is: "{topic}".' if topic else f"Pick a fresh, specific, clickable topic within: {category}."
+    subject = (f'The theme is: "{topic}".' if topic else
+               f"Pick a fresh, specific, clickable theme within: {category}. It can be a single theme "
+               f"(e.g. 'facts about the ocean') or a mix of unrelated surprising facts.")
 
-    system = f"""You are the head writer of "{cfg['channel_name']}", a YouTube channel for {cfg['audience']} that posts
-history stories and "top 5 / top 10" fact videos about history and everyday life. The voice is a warm, witty,
-confident British documentary narrator: vivid, clear, surprising, never dry, never clickbait-dishonest.
+    system = f"""You are the head writer of "{cfg['channel_name']}", a Hindi YouTube channel for {cfg['audience']}.
+Every day it posts a "Top 10" or "Top 5" countdown of quick, surprising, true facts about anything: science,
+animals, the human body, space, food, India, the world, technology, psychology, everyday life and more.
+
+LANGUAGE: Write narration, cards, title, description, tags and thumbnail_text in natural, conversational spoken
+Hindi in Devanagari script, the way a popular Indian YouTube facts narrator talks: energetic, warm, simple words.
+Common English words that Indians use everyday may stay in English (Facts, Top 10, scientists, phone, internet...).
+Write numbers as digits. Write `visual` (image briefs) in ENGLISH only.
 
 {RULES}
 
-Retention craft: open with a strong hook in the first 2 sentences (a surprising claim or question that the video
-pays off), keep every sentence concrete, end each list item or chapter with a smooth bridge to the next, and save
-the most surprising item for last. Close with a short recap, ask viewers which fact surprised them most in the
-comments, and invite them to subscribe for a new video every day."""
+Retention craft: open with a strong hook in the first 2 sentences (e.g. "क्या आप जानते हैं..."), keep each fact
+punchy and concrete (what it is + why it's surprising), add a quick bridge to the next fact, and save the most
+mind-blowing fact for #1. Close with a 1-line recap, ask which fact surprised viewers most in the comments, and
+invite them to subscribe for new facts every day."""
 
-    if spec["items"]:
-        shape = (f"a {spec['label']} counting down from #{spec['items']} to #1. Start with 1-2 hook/intro shots "
-                 f"(card \"\"), then each item: its first shot has card like \"#7 · The Emperor Who Fought the Sea\" "
-                 f"(number, a middle dot, a short punchy heading), followed by 1-3 more shots with card \"\". "
-                 f"End with 1-2 outro shots (card \"\").")
-    else:
-        shape = ("a history story in 4-6 chapters. Start with 1-2 hook shots (card \"\"); the first shot of each chapter "
-                 "has a card like \"Part 2 · The Night of the Fire\"; end with 1-2 outro shots (card \"\").")
+    shape = (f"a {spec['label']} counting down from #{spec['items']} to #1. Start with 1-2 hook/intro shots "
+             f"(card \"\"), then each fact: its first shot has a card like \"#7 · समुद्र का सबसे गहरा राज़\" "
+             f"(number, a middle dot, a short punchy Hindi heading), followed by 1-2 more shots with card \"\". "
+             f"End with 1-2 outro shots (card \"\").")
 
     prompt = f"""{subject}
 Write {shape}
-Length: about {spec['words']} narration words in {spec['shots']} shots (roughly 10-25 seconds of narration each).
+Length: about {spec['words']} Hindi narration words in {spec['shots']} shots (roughly 8-20 seconds of narration each).
 
-Also write a vertical YouTube Short (~{cfg['short_seconds']} seconds, about {int(cfg['short_seconds'] * 2.2)} words,
-4-6 shots, all cards "") built around the single most surprising fact from the video, opening with an instant hook.
+Also write a vertical YouTube Short (~{cfg['short_seconds']} seconds, about {int(cfg['short_seconds'] * 2.2)} Hindi
+words, 3-5 shots, all cards "") built around the single most surprising fact from the video, opening with an
+instant hook.
 
-Recent videos - do not repeat these topics:
+Recent videos - do not repeat these themes or facts:
 {recent}
 
 Field guide:
-- visual: a self-contained illustration brief for that moment: subject, setting, era-accurate clothing/architecture,
-  composition and lighting. No text or lettering in the image. No living real people. Short visuals are vertical
-  (portrait), so compose them tall.
-- camera: slow camera move; vary it. effect: subtle animated overlay that suits the mood ("none" is common;
-  "dust" for old interiors, "embers" for fire/battles/forges, "snow"/"rain" for weather, "fireflies" for night).
-- narration: what the narrator says during the shot.
-- title: curiosity-driven and accurate, under 70 characters (e.g. "10 Weird Things Romans Did Every Day").
-- thumbnail_text: 2-4 punchy words for the thumbnail (e.g. "ROME WAS WEIRD"). thumbnail_visual: one striking image.
-- description: 2-4 sentences, then a blank line and 3 relevant hashtags. tags: 12-18 search tags."""
+- visual (ENGLISH): a self-contained illustration brief for that moment: subject, setting, composition, lighting,
+  mood. No text or lettering in the image. No living real people. Short visuals are vertical (portrait).
+- camera: slow camera move; vary it. effect: subtle animated overlay that suits the shot ("none" is common;
+  "dust" for old places, "embers" for fire/heat, "snow"/"rain" for weather, "bubbles" for water, "sparkles" for
+  magical/space moments, "fireflies" for night).
+- narration (Hindi): what the narrator says during the shot.
+- title (Hindi, may include English words like Facts): curiosity-driven and accurate, under 70 characters,
+  e.g. "10 ऐसे Facts जो आपका दिमाग़ हिला देंगे".
+- thumbnail_text (Hindi): 2-4 punchy words, e.g. "यकीन नहीं होगा!". thumbnail_visual (English): one striking image.
+- description (Hindi): 2-4 sentences, then a blank line and 3 relevant hashtags.
+- tags: 12-18 search tags mixing Hindi and English (e.g. "रोचक तथ्य", "facts in hindi")."""
 
     feedback, problems = "", []
     for attempt in range(1, 5):
@@ -157,8 +163,9 @@ Field guide:
 
 
 def review_video(llm, v: Video, cfg: dict) -> Review:
-    system = ("You are a meticulous fact-checker and standards editor for an educational YouTube channel. "
-              "Check every factual claim against well-established historical and scientific consensus.")
+    system = ("You are a meticulous fact-checker and standards editor for a Hindi educational YouTube channel. "
+              "Check every factual claim against well-established scientific and historical consensus. "
+              "Also check that the Hindi is natural and correct. Write the issues in English.")
     prompt = (f"Rules:\n{RULES}\n\nScript (JSON):\n{v.model_dump_json(indent=1)}\n\n"
               "Reject (approved=false) if ANY claim is false, a myth stated as fact, an invented quote, an overly precise "
               "number you cannot stand behind, or anything breaking the standards. List each problem with the exact "

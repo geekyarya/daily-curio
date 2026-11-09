@@ -119,7 +119,8 @@ def main() -> int:
 
     log("3/5 Producing videos")
     video_mp4, short_mp4 = out / "video.mp4", out / "short.mp4"
-    end_line = "A new video every day"
+    ui = cfg.get("ui", {})
+    end_line = ui.get("end_line", "A new video every day")
     tl = make_video(v.shots, imgs, cfg, work, video_mp4, portrait=False, title=v.title, end_line=end_line,
                     title_image=thumb_src, seed=seed, tag="video", log=log)
     write_srt(tl, out / "video.srt")
@@ -129,11 +130,12 @@ def main() -> int:
                    end_line=end_line, title_image=None, seed=seed + 1, tag="short", log=log)
 
     tags = list(dict.fromkeys(v.tags + cfg["youtube"]["default_tags"]))
-    footer = f"\n\n{cfg['channel_name']}: {cfg['tagline'].lower()}. Subscribe for a new video every day."
+    footer = "\n\n" + ui.get("footer", "{channel}: a new video every day.").format(channel=cfg["channel_name"])
     if cfg.get("ai_disclosure"):
         footer += "\nScript, narration and illustrations were made with the help of AI tools and fact-checked."
     desc = v.description + footer
-    short_desc = f"{v.short.description}\n\nFull video: \"{v.title}\" on our channel.{footer}\n#shorts"
+    full = ui.get("full_video", 'Full video: "{title}" on our channel.').format(title=v.title)
+    short_desc = f"{v.short.description}\n\n{full}{footer}\n#shorts"
     (out / "description.txt").write_text(desc)
 
     ids = {"video": None, "short": None}

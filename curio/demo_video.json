@@ -1,35 +1,35 @@
 {
-  "title": "5 Everyday Things the Romans Invented First",
-  "description": "You use Roman ideas every single day without noticing. From concrete to newspapers, here are five everyday things the ancient Romans got to first.\n\n#history #romans #facts",
-  "tags": ["roman inventions", "ancient rome facts", "history facts", "top 5"],
-  "thumbnail_visual": "A bustling ancient Roman forum at golden hour with marble columns, a crowd in togas and a giant concrete dome rising behind",
-  "thumbnail_text": "ROME DID IT FIRST",
+  "title": "5 ऐसे Facts जो आपको हैरान कर देंगे",
+  "description": "शहद से लेकर ऑक्टोपस तक, ये 5 Facts आपकी सोच बदल देंगे।\n\n#facts #hindifacts #रोचकतथ्य",
+  "tags": ["रोचक तथ्य", "facts in hindi", "amazing facts"],
+  "thumbnail_visual": "A glowing jar of golden honey in an ancient Egyptian tomb lit by a torch",
+  "thumbnail_text": "यकीन नहीं होगा!",
   "shots": [
-    {"card": "", "visual": "Wide view of ancient Rome at sunrise, marble temples and the dome of the Pantheon glowing", "camera": "zoom_in", "effect": "dust",
-     "narration": "You probably used something Roman before breakfast this morning. Here are five everyday things the ancient Romans got to first."},
-    {"card": "#5 · Concrete That Lasts", "visual": "Roman builders pouring concrete into wooden frames beside a half-built harbour wall", "camera": "pan_right", "effect": "dust",
-     "narration": "Number five: concrete. Roman builders mixed lime with volcanic ash, and some of their harbour walls have survived two thousand years of seawater."},
-    {"card": "#4 · The First Newspaper", "visual": "A Roman crowd reading a large public notice board in the forum", "camera": "zoom_out", "effect": "none",
-     "narration": "Number four: the daily news. Rome posted public notices called the Acta Diurna, sharing announcements, trials and even births and marriages."},
-    {"card": "#3 · Heated Floors", "visual": "Cross-section of a Roman bathhouse showing a furnace and hot air flowing under raised stone floors", "camera": "pan_left", "effect": "embers",
-     "narration": "Number three: underfloor heating. The hypocaust pushed hot air from a furnace beneath raised floors, keeping bathhouses and villas cosy."},
-    {"card": "#2 · Shopping Malls", "visual": "Trajan's Market, a multi-level brick arcade full of small shops and shoppers", "camera": "pan_up", "effect": "none",
-     "narration": "Number two: the shopping centre. Trajan's Market stacked dozens of shops over several levels, and you can still walk through it today."},
-    {"card": "#1 · Fast Food", "visual": "A Roman street counter with clay jars set into a painted stone bar, people buying food", "camera": "zoom_in", "effect": "dust",
-     "narration": "And number one: fast food. Busy Romans grabbed hot meals from street counters called thermopolia. One in Pompeii still has its painted menu art."},
-    {"card": "", "visual": "Sunset over the Roman Forum ruins with modern city lights beyond", "camera": "zoom_out", "effect": "fireflies",
-     "narration": "Which one surprised you most? Tell me in the comments, and subscribe for a new video every day."}
+    {"card": "", "visual": "A curious person looking at a glowing question mark in a starry sky", "camera": "zoom_in", "effect": "sparkles",
+     "narration": "क्या आप जानते हैं कि हमारे आस पास की दुनिया में कितने अजीब राज़ छुपे हैं? आज हम ऐसे 5 Facts देखेंगे जो आपको हैरान कर देंगे।"},
+    {"card": "#5 · शहद कभी ख़राब नहीं होता", "visual": "A jar of golden honey inside an ancient Egyptian tomb, torch light", "camera": "pan_right", "effect": "dust",
+     "narration": "नंबर 5. शहद कभी ख़राब नहीं होता। Scientists को मिस्र के पुराने मक़बरों में हज़ारों साल पुराना शहद मिला, और वो आज भी खाने लायक था।"},
+    {"card": "#4 · ऑक्टोपस के तीन दिल", "visual": "A blue octopus swimming in a deep ocean with light rays", "camera": "zoom_out", "effect": "bubbles",
+     "narration": "नंबर 4. ऑक्टोपस के तीन दिल होते हैं, और उसका ख़ून नीले रंग का होता है।"},
+    {"card": "#3 · केला एक बेरी है", "visual": "A bunch of bananas next to strawberries on a wooden table", "camera": "pan_left", "effect": "none",
+     "narration": "नंबर 3. Botany के हिसाब से केला एक बेरी है, लेकिन स्ट्रॉबेरी बेरी नहीं है।"},
+    {"card": "#2 · शुक्र ग्रह का दिन", "visual": "Planet Venus glowing with thick clouds against deep space", "camera": "zoom_in", "effect": "sparkles",
+     "narration": "नंबर 2. शुक्र ग्रह पर एक दिन, वहाँ के एक साल से भी लंबा होता है।"},
+    {"card": "#1 · हमारी हड्डियाँ", "visual": "A glowing blue x-ray style illustration of a human skeleton", "camera": "pan_up", "effect": "none",
+     "narration": "और नंबर 1. जन्म के समय बच्चे के शरीर में लगभग 300 हड्डियाँ होती हैं, लेकिन बड़े होने तक ये जुड़कर 206 रह जाती हैं।"},
+    {"card": "", "visual": "A cozy room at night with a glowing lamp and books", "camera": "zoom_out", "effect": "fireflies",
+     "narration": "आपको कौन सा Fact सबसे ज़्यादा हैरान करने वाला लगा? Comment में बताइए, और रोज़ नए Facts के लिए Subscribe कीजिए।"}
   ],
   "short": {
-    "title": "Romans Had Fast Food?!",
-    "description": "Two thousand years ago, Romans were already grabbing takeaway.",
+    "title": "शहद कभी ख़राब नहीं होता?!",
+    "description": "हज़ारों साल पुराना शहद आज भी खाने लायक है!",
     "shots": [
-      {"card": "", "visual": "Vertical view of a busy Roman street with a food counter", "camera": "zoom_in", "effect": "dust",
-       "narration": "Romans had fast food two thousand years ago."},
-      {"card": "", "visual": "Vertical close-up of clay jars set into a painted stone counter", "camera": "pan_up", "effect": "none",
-       "narration": "Street counters called thermopolia served hot meals to busy city workers who had no kitchen at home."},
-      {"card": "", "visual": "Vertical view of Pompeii ruins with a preserved painted food counter", "camera": "zoom_out", "effect": "dust",
-       "narration": "In Pompeii, one counter still shows its colourful painted menu art. Takeaway is very, very old."}
+      {"card": "", "visual": "Vertical close-up of golden honey dripping from a spoon", "camera": "zoom_in", "effect": "none",
+       "narration": "शहद कभी ख़राब नहीं होता!"},
+      {"card": "", "visual": "Vertical view of an ancient Egyptian tomb with clay jars", "camera": "pan_up", "effect": "dust",
+       "narration": "मिस्र के मक़बरों में हज़ारों साल पुराना शहद मिला, और वो आज भी खाने लायक था।"},
+      {"card": "", "visual": "Vertical view of bees on a honeycomb in warm light", "camera": "zoom_out", "effect": "sparkles",
+       "narration": "इसकी वजह है इसमें बहुत कम पानी और एक नेचुरल एसिड। है ना कमाल?"}
     ]
   }
 }

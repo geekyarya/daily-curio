@@ -20,7 +20,7 @@ from .images import cover
 from .script import Shot
 
 ROOT = Path(__file__).resolve().parent.parent
-FONTS = {"sans": (ROOT / "assets" / "fonts" / "Montserrat.ttf", "ExtraBold"),
+FONTS = {"sans": (ROOT / "assets" / "fonts" / "Mukta-ExtraBold.ttf", ""),  # Hindi (Devanagari) + Latin
          "serif": (ROOT / "assets" / "fonts" / "Cinzel.ttf", "Black")}
 FALLBACK_FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
 
@@ -35,10 +35,11 @@ def font(size: int, family: str = "sans") -> ImageFont.FreeTypeFont:
     path, weight = FONTS[family]
     if path.exists():
         f = ImageFont.truetype(str(path), size)
-        try:
-            f.set_variation_by_name(weight)
-        except Exception:  # noqa: BLE001
-            pass
+        if weight:
+            try:
+                f.set_variation_by_name(weight)
+            except Exception:  # noqa: BLE001
+                pass
         return f
     for p in FALLBACK_FONTS:
         if Path(p).exists():
@@ -230,7 +231,7 @@ class Timeline:
 
 
 def sentences(text: str) -> list[str]:
-    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'“])", text.strip())
+    parts = re.split(r"(?<=[.!?।])\s+", text.strip())  # । = Hindi full stop (danda)
     return [p for p in parts if p.strip()]
 
 
@@ -286,7 +287,8 @@ def write_srt(tl: Timeline, path: Path) -> None:
 
 class Film:
     def __init__(self, shots: list[Shot], images: list[Path], tl: Timeline, size: tuple[int, int], fps: int,
-                 title: str, channel: str, end_line: str, title_image: Path | None, captions: bool, seed: int):
+                 title: str, channel: str, end_line: str, title_image: Path | None, captions: bool, seed: int,
+                 thanks: str = "Thanks for watching!"):
         self.tl, self.fps = tl, fps
         self.W, self.H = size
         self.portrait = self.H > self.W
@@ -299,7 +301,7 @@ class Film:
         big = int(self.H * 0.1) if not self.portrait else int(self.W * 0.085)
         self.title_img = text_block(title, big, maxw)
         self.channel_img = text_block(channel.upper(), int(big * 0.5), maxw, fill="#ffd34d", family="serif")
-        self.end_img = text_block("Thanks for watching!", int(big * 1.1), maxw, fill="#ffd34d")
+        self.end_img = text_block(thanks, int(big * 1.1), maxw, fill="#ffd34d")
         self.lesson_img = text_block(end_line, int(big * 0.55), maxw)
         self.cards = {i: text_block(s.card, int(min(self.W, self.H) * 0.075), int(self.W * 0.88), fill="#ffd34d")
                       for i, s in enumerate(shots) if s.card}
@@ -423,7 +425,7 @@ def make_video(shots, images, cfg, work: Path, out: Path, *, portrait: bool, tit
     mixed = work / f"{tag}_mix.wav"
     audio.mix(voice, mixed, tl.duration, seed, ROOT / "assets" / "music")
     film = Film(shots, images, tl, size, cfg["fps"], title, cfg["channel_name"], end_line, title_image,
-                portrait or cfg.get("burn_captions", False), seed)
+                portrait or cfg.get("burn_captions", False), seed, cfg.get("ui", {}).get("thanks", "Thanks for watching!"))
     log(f"  rendering {tag} ({tl.duration:.0f}s)")
     film.encode(mixed, out, log)
     return tl

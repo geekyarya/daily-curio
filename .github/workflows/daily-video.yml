@@ -16,10 +16,10 @@ on:
       format:
         description: "Video format"
         type: choice
-        options: [auto, top10, top5, story]
+        options: [auto, top10, top5]
         default: auto
       topic:
-        description: "Optional topic, e.g. 'Strange laws of medieval England' (blank = automatic)"
+        description: "Optional theme, e.g. 'facts about the ocean' (blank = automatic)"
         required: false
         default: ""
       skip_short:
@@ -50,7 +50,7 @@ jobs:
       - name: System packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core libraqm0
 
       - name: Python packages
         run: pip install -r requirements.txt

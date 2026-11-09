@@ -1,18 +1,20 @@
-# Daily Curio: an automated history & facts YouTube channel (free services only)
+# Daily Curio: an automated Hindi facts YouTube channel (free services only)
 
-Every day a GitHub Actions workflow writes, fact-checks, illustrates, narrates, animates and uploads:
+Every day a GitHub Actions workflow writes, fact-checks, illustrates, narrates **in Hindi**, animates and uploads:
 
-- **one long video**, rotating between a **Top 10** list (~9 min), a **history story** (~8 min) and a **Top 5** list (~5 min), and
+- **one long video**, alternating between a **Top 10** (~6 min) and a **Top 5** (~3–4 min) countdown of quick, surprising facts, and
 - **one vertical Short** built around the most surprising fact from that video.
 
-Topics rotate across ancient, medieval, modern and strange history, inventions, everyday objects, food, the human body,
-animals, space, oceans, geography, language and famous mysteries. Recently used topics are skipped.
+The facts cover anything: science, animals, the human body, space, food, India, world geography, everyday things,
+psychology, technology, oceans, money, sports, records, nature, inventions, language, weather and odd moments from
+history. Recently used themes are skipped. Narration, titles, on-screen text and captions are in Hindi
+(Devanagari, with common English words like "Facts"). Image prompts stay in English for the image model.
 
 | Step | Service | Free allowance |
 |---|---|---|
 | Script and a separate fact-check review | Google **Gemini API** free tier | plenty: a few requests per run |
 | Illustrations (painted documentary style) | **Cloudflare Workers AI**, FLUX.2 [klein] | 10,000 neurons/day ≈ 60 images; a run uses 30–47 |
-| Narration (British documentary voice) | Microsoft Edge neural voices (`edge-tts`) | free, no key |
+| Hindi narration (`hi-IN-MadhurNeural`; `hi-IN-SwaraNeural` for a female voice) | Microsoft Edge neural voices (`edge-tts`) | free, no key |
 | Music | your own royalty-free tracks in `assets/music/`, else a generated melody | free |
 | Animation and encoding | Python + ffmpeg on GitHub Actions | free for public repos |
 | Publishing | YouTube Data API | 10,000 units/day; about 3,600 used per run |
@@ -46,7 +48,7 @@ A **second Gemini pass works as a fact-checker** and rejects the script if any c
 ## Running it
 
 - **Automatically** every day at 00:23 UTC, right after Cloudflare's free allowance resets. A backup run at 03:23 UTC posts only if nothing went up that day. Change the `cron` line in `.github/workflows/daily-video.yml`.
-- **By hand:** Actions → *Daily video + Short* → *Run workflow*. You can pick the format (`auto`, `top10`, `top5`, `story`), give a topic such as *"Strange laws of medieval England"*, and tick *dry run* to make the videos without uploading.
+- **By hand:** Actions → *Daily video + Short* → *Run workflow*. You can pick the format (`auto`, `top10`, `top5`), give a theme such as *"समुद्र के रहस्य"* or *"facts about the brain"*, and tick *dry run* to make the videos without uploading.
 - **Preview without uploading:** edit `.github/preview-request` and push. Optional lines `format=top5` and `topic=...` choose what to make.
 - Download the results from the run page → **Artifacts**: `video.mp4`, `short.mp4`, `thumbnail.jpg`, `video.srt`, `video.json`.
 

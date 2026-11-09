@@ -85,7 +85,7 @@ def main() -> None:
     W, H = 2560, 1440
     banner = svg_png(banner_svg(W, H), W, H)
     title = text_block(cfg["channel_name"].upper(), 165, 2400, fill=GOLD, stroke="#0b0805", family="serif")
-    tag = text_block(cfg["tagline"], 56, 2400, fill="#fff6dc", stroke="#0b0805")
+    tag = text_block(cfg["tagline"], 76, 2400, fill="#fff6dc", stroke="#0b0805")
     for im in (title, tag):
         if im.width > 1540:
             im.thumbnail((1540, im.height))

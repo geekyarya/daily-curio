@@ -1,55 +1,52 @@
 {
   "channel_name": "Daily Curio",
-  "tagline": "History & fascinating facts, every day",
-  "audience": "curious general audiences (teens and adults)",
-  "language": "en",
+  "tagline": "हर दिन नए मज़ेदार Facts",
+  "audience": "Hindi-speaking viewers in India and abroad (teens and adults) who love quick, surprising facts",
+  "language": "hi",
   "fps": 24,
   "burn_captions": false,
   "short_delay_hours": 6,
   "ai_disclosure": false,
   "formats": [
     "top10",
-    "story",
     "top5"
   ],
   "format_specs": {
     "top10": {
-      "label": "Top 10 list",
+      "label": "Top 10 list of quick random facts",
       "items": 10,
-      "words": 1300,
-      "shots": "32-40"
+      "words": 900,
+      "shots": "26-34"
     },
     "top5": {
-      "label": "Top 5 list",
+      "label": "Top 5 list of quick random facts",
       "items": 5,
-      "words": 750,
-      "shots": "20-26"
-    },
-    "story": {
-      "label": "history story (one event, place or person told as a documentary)",
-      "items": 0,
-      "words": 1150,
-      "shots": "28-36"
+      "words": 500,
+      "shots": "14-20"
     }
   },
-  "short_seconds": 50,
+  "short_seconds": 45,
   "categories": [
-    "ancient history",
-    "medieval history",
-    "modern history",
-    "strange history",
-    "lost civilizations",
-    "inventions and how they changed life",
-    "everyday objects and their origins",
-    "food and drink",
+    "mind-blowing science",
+    "weird animal facts",
     "the human body",
-    "animals",
-    "space",
-    "oceans",
-    "geography and places",
+    "space and planets",
+    "food and drink",
+    "India: surprising facts",
+    "world geography and countries",
+    "everyday things we never notice",
+    "psychology and the brain",
+    "technology and gadgets",
+    "oceans and deep sea",
+    "money and business",
+    "sports and records",
+    "history's strangest moments",
+    "nature and plants",
+    "inventions and discoveries",
     "language and words",
-    "science you can see every day",
-    "famous mysteries and what we actually know"
+    "weather and natural phenomena",
+    "world records and extremes",
+    "mixed random facts"
   ],
   "text_models": [
     "gemini-3.8-flash"
@@ -68,23 +65,27 @@
       768,
       1344
     ],
-    "style": "rich painterly documentary illustration, cinematic composition, dramatic natural lighting, detailed oil-painting texture, museum-quality historical art, no text, no letters, no captions, no watermark"
+    "style": "vibrant detailed cinematic digital illustration, dramatic lighting, rich colors, clean composition with one clear subject, no text, no letters, no captions, no watermark"
   },
   "narrator_voice": {
-    "voice": "en-GB-RyanNeural",
-    "rate": "-4%",
+    "voice": "hi-IN-MadhurNeural",
+    "rate": "+4%",
     "pitch": "+0Hz"
   },
   "youtube": {
     "made_for_kids": false,
     "category_id": "27",
     "default_tags": [
-      "facts",
-      "history",
-      "top 10",
+      "facts in hindi",
+      "amazing facts",
+      "random facts",
+      "top 10 facts",
+      "rochak tathya",
+      "interesting facts hindi",
       "did you know",
-      "interesting facts",
-      "documentary"
+      "hindi facts",
+      "रोचक तथ्य",
+      "मज़ेदार तथ्य"
     ],
     "playlist_id": ""
   },
@@ -106,5 +107,11 @@
   },
   "facebook": {
     "enabled": false
+  },
+  "ui": {
+    "thanks": "देखने के लिए शुक्रिया!",
+    "end_line": "रोज़ नए मज़ेदार Facts के लिए Subscribe करें",
+    "footer": "{channel}: हर दिन नए मज़ेदार और हैरान कर देने वाले Facts। रोज़ नए वीडियो के लिए Subscribe करें।",
+    "full_video": "पूरा वीडियो देखें: \"{title}\" हमारे चैनल पर।"
   }
 }
