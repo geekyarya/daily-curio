@@ -2,8 +2,8 @@ name: Daily video + Short
 
 on:
   schedule:
-    - cron: "23 0 * * *"    # every day at 00:23 UTC, just after the free image allowance resets
-    - cron: "23 3 * * *"    # backup: only runs if nothing was posted yet today (delayed/failed main run)
+    - cron: "23 13 * * *"   # every day at 13:23 UTC (18:53 IST); keep runs ~24 h apart for Cloudflare's free allowance
+    - cron: "23 16 * * *"   # backup: only runs if nothing was posted yet today (delayed/failed main run)
   push:                     # changing this file starts a run (preview unless it contains "publish=yes")
     branches: [main]
     paths: [".github/preview-request"]
