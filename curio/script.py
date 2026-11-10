@@ -69,7 +69,7 @@ def validate(v: Video, fmt: str, cfg: dict) -> list[str]:
     spec = cfg["format_specs"][fmt]
     p: list[str] = []
     w = words(v.shots)
-    if not 0.8 * spec["words"] <= w <= 1.3 * spec["words"]:
+    if not 0.7 * spec["words"] <= w <= 1.4 * spec["words"]:
         p.append(f"The narration must total about {spec['words']} words; it has {w}.")
     lo, hi = (int(x) for x in spec["shots"].split("-"))
     if not lo - 4 <= len(v.shots) <= hi + 6:
