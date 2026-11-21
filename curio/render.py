@@ -228,6 +228,7 @@ class Timeline:
     intro: float = 0.0
     outro: float = 0.0
     duration: float = 0.0
+    music: list[str] = field(default_factory=list)
 
 
 def sentences(text: str) -> list[str]:
@@ -256,13 +257,12 @@ def record(shots: list[Shot], cfg: dict, work: Path, intro: float, outro: float,
     for shot in shots:
         s0 = n / sr
         silence(PAD_IN)
-        for sent in sentences(shot.narration):
-            clip = audio.tts_line(sent, voice_cfg, work, f"{tag}{idx:03d}", log)
-            idx += 1
-            t0 = n / sr
-            add(clip)
-            tl.segs.append(Seg(t0, n / sr, "narrator", sent))
-            silence(GAP)
+        clip, sents = audio.tts_passage(shot.narration, voice_cfg, work, f"{tag}{idx:03d}", log)
+        idx += 1
+        t0 = n / sr
+        add(clip)
+        for a, b, text in sents:  # caption timings straight from the voice engine
+            tl.segs.append(Seg(t0 + a, t0 + min(b, len(clip) / sr), "narrator", text))
         silence(PAD_OUT)
         if n / sr - s0 < MIN_SHOT:
             silence(MIN_SHOT - (n / sr - s0))
@@ -423,7 +423,7 @@ def make_video(shots, images, cfg, work: Path, out: Path, *, portrait: bool, tit
     intro, outro = (0.0, 2.0) if portrait else (3.0, 5.0)
     tl, voice = record(shots, cfg, work, intro, outro, tag, log)
     mixed = work / f"{tag}_mix.wav"
-    audio.mix(voice, mixed, tl.duration, seed, ROOT / "assets" / "music")
+    tl.music = audio.mix(voice, mixed, tl.duration, seed, ROOT / "assets" / "music")
     film = Film(shots, images, tl, size, cfg["fps"], title, cfg["channel_name"], end_line, title_image,
                 portrait or cfg.get("burn_captions", False), seed, cfg.get("ui", {}).get("thanks", "Thanks for watching!"))
     log(f"  rendering {tag} ({tl.duration:.0f}s)")

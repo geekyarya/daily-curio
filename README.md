@@ -15,7 +15,7 @@ history. Recently used themes are skipped. Narration, titles, on-screen text and
 | Script and a separate fact-check review | Google **Gemini API** free tier | plenty: a few requests per run |
 | Illustrations (painted documentary style) | **Cloudflare Workers AI**, FLUX.2 [klein] | 10,000 neurons/day ≈ 60 images; a run uses 30–47 |
 | Hindi narration (`hi-IN-MadhurNeural`; `hi-IN-SwaraNeural` for a female voice) | Microsoft Edge neural voices (`edge-tts`) | free, no key |
-| Music | your own royalty-free tracks in `assets/music/`, else a generated melody | free |
+| Music | 6 curated Kevin MacLeod tracks (incompetech.com, CC BY 4.0) in `assets/music/`, credited automatically in each description; add or remove tracks freely (put their credit in `assets/music/credits.json`) | free |
 | Animation and encoding | Python + ffmpeg on GitHub Actions | free for public repos |
 | Publishing | YouTube Data API | 10,000 units/day; about 3,600 used per run |
 

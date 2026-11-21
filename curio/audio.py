@@ -1,4 +1,4 @@
-"""Text-to-speech for each line, procedural background music, and mixing."""
+"""Narration (natural, one take per scene), background music playlists, and a broadcast-style mix."""
 from __future__ import annotations
 
 import asyncio
@@ -35,6 +35,48 @@ def write_wav(path: Path, samples: np.ndarray, sr: int = SR) -> None:
 async def _edge(text: str, voice: dict, out: Path) -> None:
     import edge_tts
     await edge_tts.Communicate(text, voice["voice"], rate=voice.get("rate", "+0%"), pitch=voice.get("pitch", "+0Hz")).save(str(out))
+
+
+async def _edge_stream(text: str, voice: dict, out: Path) -> list[tuple[float, float, str]]:
+    import edge_tts
+    sents = []
+    with open(out, "wb") as fh:
+        async for ch in edge_tts.Communicate(text, voice["voice"], rate=voice.get("rate", "+0%"),
+                                             pitch=voice.get("pitch", "+0Hz"), boundary="SentenceBoundary").stream():
+            if ch["type"] == "audio":
+                fh.write(ch["data"])
+            elif ch["type"] == "SentenceBoundary":
+                start = ch["offset"] / 1e7
+                sents.append((start, start + ch["duration"] / 1e7, ch["text"]))
+    return sents
+
+
+def tts_passage(text: str, voice: dict, workdir: Path, key, log=print) -> tuple[np.ndarray, list[tuple[float, float, str]]]:
+    """Read a whole passage in one take (natural intonation across sentences).
+
+    Returns the audio and (start, end, sentence) timings for captions. Falls back to sentence-by-sentence.
+    """
+    mp3, wav = workdir / f"pass_{key}.mp3", workdir / f"pass_{key}.wav"
+    for attempt in range(3):
+        try:
+            sents = asyncio.run(_edge_stream(text, voice, mp3))
+            _to_wav(mp3, wav)
+            audio = read_wav(wav)
+            if sents:
+                return audio, sents
+            return audio, [(0.0, len(audio) / SR, text)]
+        except Exception as e:  # noqa: BLE001
+            log(f"    edge-tts failed (attempt {attempt+1}): {e}")
+    # fallback: one clip per sentence, timings from clip lengths
+    import re
+    parts = [p for p in re.split(r"(?<=[.!?\u0964])\s+", text.strip()) if p.strip()] or [text]
+    clips, sents, t = [], [], 0.0
+    for i, p in enumerate(parts):
+        clip = tts_line(p, voice, workdir, f"{key}_{i}", log)
+        sents.append((t, t + len(clip) / SR, p))
+        clips += [clip, np.zeros(int(SR * 0.15), np.float32)]
+        t += len(clip) / SR + 0.15
+    return np.concatenate(clips), sents
 
 
 def tts_line(text: str, voice: dict, workdir: Path, idx, log=print) -> np.ndarray:
@@ -103,24 +145,71 @@ def make_music(seconds: float, seed: int, sr: int = 44100) -> np.ndarray:
     return out[: int(sr * seconds)] / max(1e-6, np.abs(out).max()) * 0.8
 
 
-def pick_music(music_dir: Path, seed: int) -> Path | None:
-    """A royalty-free track you dropped into assets/music (e.g. from the YouTube Audio Library)."""
+def load_credits(music_dir: Path) -> dict:
+    import json
+    f = music_dir / "credits.json"
+    return json.loads(f.read_text()) if f.exists() else {}
+
+
+def playlist(music_dir: Path, seconds: float, seed: int) -> list[Path]:
+    """Enough different tracks (rotating by seed) to cover the video without audible looping."""
     tracks = sorted(p for p in music_dir.glob("*") if p.suffix.lower() in (".mp3", ".wav", ".m4a", ".ogg"))
-    return tracks[seed % len(tracks)] if tracks else None
+    if not tracks:
+        return []
+    out, total, k = [], 0.0, seed % len(tracks)
+    while total < seconds + 5 and len(out) < 12:
+        t = tracks[k % len(tracks)]
+        out.append(t)
+        total += float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                       str(t)], capture_output=True, text=True).stdout.strip() or 60) - 4
+        k += 1
+    return out
 
 
-def mix(voice_wav: Path, out_wav: Path, seconds: float, seed: int, music_dir: Path, music_db: float = -19.0) -> None:
-    track = pick_music(music_dir, seed)
-    if track is None:
-        track = out_wav.with_name("music.wav")
-        write_wav(track, make_music(seconds, seed), 44100)
-    fade_start = max(0.0, seconds - 3)
-    # loop the track, duck it under speech, fade out at the end
+# Voice: rumble cut, a touch of warmth and presence, de-essing, gentle compression (radio/YouTube voiceover style)
+VOICE_FX = ("highpass=f=75,equalizer=f=180:t=q:w=1.1:g=2.5,equalizer=f=3200:t=q:w=1.4:g=2,"
+            "deesser=i=0.35,acompressor=threshold=-20dB:ratio=3:attack=8:release=180:makeup=2")
+
+
+def mix(voice_wav: Path, out_wav: Path, seconds: float, seed: int, music_dir: Path, music_db: float = -6.0) -> list[str]:
+    """Polish the narration, lay a ducked music bed under it, master to YouTube loudness. Returns tracks used."""
+    tracks = playlist(music_dir, seconds, seed)
+    used = [t.name for t in tracks]
+    if not tracks:
+        gen = out_wav.with_name("music.wav")
+        write_wav(gen, make_music(seconds, seed), 44100)
+        tracks = [gen]
+    inputs, chain = [], ""
+    for i, t in enumerate(tracks):
+        inputs += ["-i", str(t)]
+        chain += f"[{i + 1}:a]aresample=44100,aformat=channel_layouts=stereo[t{i}];"
+    prev = "t0"
+    for i in range(1, len(tracks)):  # crossfade track into track
+        chain += f"[{prev}][t{i}]acrossfade=d=4:c1=tri:c2=tri[x{i}];"
+        prev = f"x{i}"
+    fade_start = max(0.0, seconds - 4)
+    raw = out_wav.with_name(out_wav.stem + "_raw.wav")
     subprocess.run([
-        "ffmpeg", "-y", "-loglevel", "error", "-i", str(voice_wav), "-stream_loop", "-1", "-i", str(track),
-        "-filter_complex",
-        f"[0:a]aresample=44100,asplit=2[v][vs];"
-        f"[1:a]aresample=44100,atrim=0:{seconds:.2f},volume={music_db}dB,afade=t=out:st={fade_start:.2f}:d=3[m];"
-        "[m][vs]sidechaincompress=threshold=0.02:ratio=5:attack=30:release=500[md];"
-        "[v][md]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[out]",
-        "-map", "[out]", "-ac", "2", "-ar", "44100", str(out_wav)], check=True)
+        "ffmpeg", "-y", "-loglevel", "error", "-i", str(voice_wav), *inputs, "-filter_complex",
+        chain +
+        f"[0:a]aresample=44100,{VOICE_FX},asplit=2[v][vs];"
+        f"[{prev}]atrim=0:{seconds:.2f},volume={music_db}dB,afade=t=in:d=1.5,afade=t=out:st={fade_start:.2f}:d=4[m];"
+        # duck the music ~9 dB while someone speaks, release smoothly in pauses
+        "[m][vs]sidechaincompress=threshold=0.015:ratio=8:attack=40:release=650:makeup=1[md];"
+        "[v][md]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.9[out]",
+        "-map", "[out]", "-ac", "2", "-ar", "48000", str(raw)], check=True)
+    master(raw, out_wav)
+    return used
+
+
+def master(src: Path, dst: Path, target: float = -14.0) -> None:
+    """Two-pass loudness normalisation (linear gain, so speech/music balance and pauses stay natural)."""
+    import json
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(src), "-af",
+                        f"loudnorm=I={target}:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    m = json.loads(r.stderr[r.stderr.rindex("{"):r.stderr.rindex("}") + 1])
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-af",
+                    f"loudnorm=I={target}:TP=-1.5:LRA=11:linear=true:measured_I={m['input_i']}:"
+                    f"measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
+                    f"offset={m['target_offset']}", "-ar", "48000", str(dst)], check=True)

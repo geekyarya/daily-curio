@@ -126,16 +126,21 @@ def main() -> int:
     write_srt(tl, out / "video.srt")
     thumbnail(thumb_src, v.thumbnail_text or v.title, out / "thumbnail.jpg")
     if not args.skip_short:
-        make_video(v.short.shots, short_imgs, cfg, work, short_mp4, portrait=True, title=v.short.title,
+        stl = make_video(v.short.shots, short_imgs, cfg, work, short_mp4, portrait=True, title=v.short.title,
                    end_line=end_line, title_image=None, seed=seed + 1, tag="short", log=log)
 
+    from .audio import load_credits
+    credits = load_credits(ROOT / "assets" / "music")
+    used = tl.music + (stl.music if not args.skip_short else [])
+    music_lines = [credits[t] for t in dict.fromkeys(used) if t in credits]
+    music_credit = ("\n\nMusic:\n" + "\n".join(music_lines)) if music_lines else ""
     tags = list(dict.fromkeys(v.tags + cfg["youtube"]["default_tags"]))
     footer = "\n\n" + ui.get("footer", "{channel}: a new video every day.").format(channel=cfg["channel_name"])
     if cfg.get("ai_disclosure"):
         footer += "\nScript, narration and illustrations were made with the help of AI tools and fact-checked."
-    desc = v.description + footer
+    desc = v.description + footer + music_credit
     full = ui.get("full_video", 'Full video: "{title}" on our channel.').format(title=v.title)
-    short_desc = f"{v.short.description}\n\n{full}{footer}\n#shorts"
+    short_desc = f"{v.short.description}\n\n{full}{footer}{music_credit}\n#shorts"
     (out / "description.txt").write_text(desc)
 
     ids = {"video": None, "short": None}
