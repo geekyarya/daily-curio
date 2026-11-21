@@ -1,0 +1,29 @@
+name: Publish uploaded videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Only videos from this date on (YYYY-MM-DD)"
+        default: "2026-11-10"
+  push:
+    branches: [main]
+    paths: [".github/publish-backlog"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q google-api-python-client google-auth
+      - name: Make private uploads public
+        env:
+          YT_TOKEN: ${{ secrets.YT_TOKEN }}
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: python -m curio.publish_backlog --since "${{ inputs.since || '2026-11-10' }}"

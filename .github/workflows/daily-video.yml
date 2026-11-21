@@ -68,7 +68,7 @@ jobs:
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
           YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
           YOUTUBE_PLAYLIST_ID: ${{ vars.YOUTUBE_PLAYLIST_ID }}
-          PRIVACY_STATUS: ${{ vars.PRIVACY_STATUS || 'private' }}
+          PRIVACY_STATUS: ${{ vars.PRIVACY_STATUS || 'public' }}
           DRY_RUN: ${{ (github.event_name == 'push' || inputs.dry_run) && 'true' || 'false' }}
           VIDEO_FORMAT: ${{ inputs.format || 'auto' }}
           VIDEO_TOPIC: ${{ inputs.topic }}

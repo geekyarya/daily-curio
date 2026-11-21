@@ -145,12 +145,13 @@ def main() -> int:
         log("4/5 Uploading")
         from . import upload
         yt = upload.client()
-        ids["video"] = upload.upload(yt, video_mp4, v.title, desc, tags, cfg,
-                                     thumb=out / "thumbnail.jpg", srt=out / "video.srt", log=log)
+        times = cfg.get("publish_times_utc", {})
+        ids["video"] = upload.upload(yt, video_mp4, v.title, desc, tags, cfg, thumb=out / "thumbnail.jpg",
+                                     srt=out / "video.srt", publish_at=times.get("video"), log=log)
         if not args.skip_short:
             title = v.short.title if "#shorts" in v.short.title.lower() else f"{v.short.title} #shorts"
             ids["short"] = upload.upload(yt, short_mp4, title, short_desc, tags, cfg,
-                                         delay_hours=cfg.get("short_delay_hours", 0), log=log)
+                                         publish_at=times.get("short"), log=log)
 
     # Instagram + Facebook Page Reels from the Short. Each post is independent; failures fail the run at the end.
     errors, ig_link = [], None

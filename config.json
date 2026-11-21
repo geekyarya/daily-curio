@@ -5,7 +5,6 @@
   "language": "hi",
   "fps": 24,
   "burn_captions": false,
-  "short_delay_hours": 6,
   "ai_disclosure": false,
   "formats": [
     "top10",
@@ -90,7 +89,7 @@
     "playlist_id": ""
   },
   "instagram": {
-    "enabled": false,
+    "enabled": true,
     "graph_version": "v23.0",
     "hashtags": [
       "#history",
@@ -106,12 +105,17 @@
     ]
   },
   "facebook": {
-    "enabled": false
+    "enabled": true
   },
   "ui": {
     "thanks": "देखने के लिए शुक्रिया!",
     "end_line": "रोज़ नए मज़ेदार Facts के लिए Subscribe करें",
     "footer": "{channel}: हर दिन नए मज़ेदार और हैरान कर देने वाले Facts। रोज़ नए वीडियो के लिए Subscribe करें।",
     "full_video": "पूरा वीडियो देखें: \"{title}\" हमारे चैनल पर।"
+  },
+  "publish_times_utc": {
+    "short": "07:00",
+    "video": "13:00",
+    "_help": "Uploads are scheduled to go live at the next of these times (UTC). 07:00 UTC = 12:30 IST, 13:00 UTC = 18:30 IST."
   }
 }

@@ -30,8 +30,19 @@ def client():
     return build("youtube", "v3", credentials=creds, cache_discovery=False)
 
 
+def next_time_utc(hhmm: str, min_lead_minutes: int = 20) -> dt.datetime:
+    """The next occurrence of HH:MM UTC that is at least `min_lead_minutes` away."""
+    h, m = (int(x) for x in hhmm.split(":"))
+    now = dt.datetime.now(dt.timezone.utc)
+    t = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    while t < now + dt.timedelta(minutes=min_lead_minutes):
+        t += dt.timedelta(days=1)
+    return t
+
+
 def upload(yt, video: Path, title: str, description: str, tags: list[str], cfg: dict, *,
-           thumb: Path | None = None, srt: Path | None = None, delay_hours: float = 0, log=print) -> str:
+           thumb: Path | None = None, srt: Path | None = None, publish_at: str | None = None,
+           log=print) -> str:
     privacy = os.environ.get("PRIVACY_STATUS", "private")
     status = {
         "privacyStatus": privacy,
@@ -41,8 +52,8 @@ def upload(yt, video: Path, title: str, description: str, tags: list[str], cfg: 
         "embeddable": True,
         "license": "youtube",
     }
-    if privacy == "public" and delay_hours > 0:  # schedule: upload private, YouTube publishes it later
-        at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=delay_hours)
+    if privacy == "public" and publish_at:  # schedule: upload private, YouTube makes it public at that time
+        at = next_time_utc(publish_at)
         status |= {"privacyStatus": "private", "publishAt": at.strftime("%Y-%m-%dT%H:%M:%SZ")}
     body = {
         "snippet": {
