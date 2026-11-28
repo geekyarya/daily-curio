@@ -72,7 +72,7 @@ def validate(v: Video, fmt: str, cfg: dict) -> list[str]:
     if not 0.7 * spec["words"] <= w <= 1.4 * spec["words"]:
         p.append(f"The narration must total about {spec['words']} words; it has {w}.")
     lo, hi = (int(x) for x in spec["shots"].split("-"))
-    if not lo - 4 <= len(v.shots) <= hi + 6:
+    if not lo - 4 <= len(v.shots) <= hi + 3:
         p.append(f"Use {spec['shots']} shots; there are {len(v.shots)}.")
     cards = [s.card for s in v.shots if s.card]
     if spec["items"] and len(cards) != spec["items"]:
@@ -102,10 +102,12 @@ def write_video(cfg: dict, history: list[dict], fmt: str, category: str, topic: 
 Every day it posts a "Top 10" or "Top 5" countdown of quick, surprising, true facts about anything: science,
 animals, the human body, space, food, India, the world, technology, psychology, everyday life and more.
 
-LANGUAGE: Write narration, cards, title, description, tags and thumbnail_text in natural, conversational spoken
-Hindi in Devanagari script, the way a popular Indian YouTube facts narrator talks: energetic, warm, simple words.
-Common English words that Indians use everyday may stay in English (Facts, Top 10, scientists, phone, internet...).
-Write numbers as digits. Write `visual` (image briefs) in ENGLISH only.
+LANGUAGE AND TONE: Write narration, cards, title, description, tags and thumbnail_text in natural Hinglish the way
+top Indian explainer YouTubers talk: Hindi in Devanagari script, with the English words Indians really use left in
+English in Latin script (Facts, scientists, company, market, record, internet, IPO, planet...). Sound like a
+confident storyteller talking to a friend, not a textbook: short punchy sentences, rhetorical questions
+("सोचिए...", "लेकिन यहीं कहानी में twist आता है!"), a little drama and humour, and concrete details (who, where,
+when, how much). Write numbers as digits. Write `visual` (image briefs) in ENGLISH only.
 
 {RULES}
 
@@ -121,7 +123,7 @@ invite them to subscribe for new facts every day."""
 
     prompt = f"""{subject}
 Write {shape}
-Length: about {spec['words']} Hindi narration words in {spec['shots']} shots (roughly 8-20 seconds of narration each).
+Length: about {spec['words']} narration words in {spec['shots']} shots (roughly 6-14 seconds of narration each).
 
 Also write a vertical YouTube Short (~{cfg['short_seconds']} seconds, about {int(cfg['short_seconds'] * 2.2)} Hindi
 words, 3-5 shots, all cards "") built around the single most surprising fact from the video, opening with an
@@ -131,15 +133,20 @@ Recent videos - do not repeat these themes or facts:
 {recent}
 
 Field guide:
-- visual (ENGLISH): a self-contained illustration brief for that moment: subject, setting, composition, lighting,
-  mood. No text or lettering in the image. No living real people. Short visuals are vertical (portrait).
+- visual (ENGLISH): a storytelling illustration brief that SHOWS the moment, like a frame from an illustrated
+  documentary: people acting it out (who they are, what they're doing, their expression), the setting with period-
+  and place-accurate details (Indian settings and characters whenever the fact is about India or everyday life),
+  camera framing (wide / medium / close-up) and lighting. Prefer human scenes over plain objects. No text, signs,
+  logos or lettering in the image. No living real people or celebrities. Short visuals are vertical (portrait).
 - camera: slow camera move; vary it. effect: subtle animated overlay that suits the shot ("none" is common;
   "dust" for old places, "embers" for fire/heat, "snow"/"rain" for weather, "bubbles" for water, "sparkles" for
   magical/space moments, "fireflies" for night).
 - narration (Hindi): what the narrator says during the shot.
 - title (Hindi, may include English words like Facts): curiosity-driven and accurate, under 70 characters,
   e.g. "10 ऐसे Facts जो आपका दिमाग़ हिला देंगे".
-- thumbnail_text (Hindi): 2-4 punchy words, e.g. "यकीन नहीं होगा!". thumbnail_visual (English): one striking image.
+- thumbnail_text: 3-4 punchy Hinglish words for a two-colour headline, e.g. "समुद्र का Dark Secret!" or
+  "ये Fact चौंका देगा!". thumbnail_visual (English): one exaggerated, emotional close-up scene (a shocked or smirking
+  character with the key object), dramatic and instantly readable at a small size.
 - description (Hindi): 2-4 sentences, then a blank line and 3 relevant hashtags.
 - tags: 12-18 search tags mixing Hindi and English (e.g. "रोचक तथ्य", "facts in hindi")."""
 

@@ -110,8 +110,13 @@ def main() -> int:
 
     log("2/5 Illustrating")
     land, port = tuple(cfg["image"]["landscape"]), tuple(cfg["image"]["portrait"])
-    thumb_src = draw(gen, v.thumbnail_visual + ". Striking, high-contrast, single clear focal point on the right side",
-                     land, seed, img_dir / "thumb.jpg")
+    thumb_style = cfg["image"].get("thumbnail_style")
+    thumb_prompt = v.thumbnail_visual + ". Leave the top fifth of the image clear for a headline."
+    if thumb_style:  # thumbnails get their own, louder style
+        gen.style, base_style = thumb_style, gen.style
+    thumb_src = draw(gen, thumb_prompt, land, seed, img_dir / "thumb.jpg")
+    if thumb_style:
+        gen.style = base_style
     imgs = illustrate(gen, v.shots, land, img_dir, "video", seed)
     thumb_src = thumb_src or imgs[0]
     short_imgs = [] if args.skip_short else illustrate(gen, v.short.shots, port, img_dir, "short", seed + 7)

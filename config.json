@@ -4,7 +4,7 @@
   "audience": "Hindi-speaking viewers in India and abroad (teens and adults) who love quick, surprising facts",
   "language": "hi",
   "fps": 24,
-  "burn_captions": false,
+  "burn_captions": true,
   "ai_disclosure": false,
   "formats": [
     "top10",
@@ -15,13 +15,13 @@
       "label": "Top 10 list of quick random facts",
       "items": 10,
       "words": 900,
-      "shots": "26-34"
+      "shots": "28-36"
     },
     "top5": {
       "label": "Top 5 list of quick random facts",
       "items": 5,
       "words": 500,
-      "shots": "14-20"
+      "shots": "18-24"
     }
   },
   "short_seconds": 45,
@@ -64,11 +64,12 @@
       768,
       1344
     ],
-    "style": "vibrant detailed cinematic digital illustration, dramatic lighting, rich colors, clean composition with one clear subject, no text, no letters, no captions, no watermark"
+    "style": "hand-drawn graphic novel illustration, clean ink line art with warm watercolor and gouache shading, cinematic composition, expressive characters with natural faces, detailed believable backgrounds, soft golden light, storybook realism, no text, no letters, no captions, no watermark, no logos",
+    "thumbnail_style": "hyper-vibrant semi-realistic 3D caricature illustration, exaggerated expressive face, glowing rim light, saturated blue and orange background with light rays, high contrast, ultra detailed, one clear subject filling the frame, no text, no letters, no watermark"
   },
   "narrator_voice": {
     "voice": "hi-IN-MadhurNeural",
-    "rate": "+4%",
+    "rate": "+8%",
     "pitch": "+0Hz"
   },
   "youtube": {

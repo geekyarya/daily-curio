@@ -283,6 +283,77 @@ def write_srt(tl: Timeline, path: Path) -> None:
     path.write_text("\n".join(f"{i}\n{ts(s.start)} --> {ts(s.end)}\n{s.text}\n" for i, s in enumerate(tl.segs, 1)))
 
 
+# ----------------------------------------------------------------------------- captions
+
+YELLOW = (255, 214, 0)
+
+
+def caption_chunks(segs: list[Seg], max_chars: int = 26) -> list[tuple[float, float, str]]:
+    """Split each sentence into short word groups, timed in proportion to their length."""
+    out = []
+    for s in segs:
+        words = s.text.split()
+        groups, cur = [], []
+        for w in words:
+            if cur and len(" ".join(cur + [w])) > max_chars:
+                groups.append(cur)
+                cur = []
+            cur.append(w)
+        if cur:
+            groups.append(cur)
+        total = sum(len(" ".join(g)) + 1 for g in groups) or 1
+        t = s.start
+        for g in groups:
+            d = (s.end - s.start) * (len(" ".join(g)) + 1) / total
+            out.append((t, t + d, " ".join(g)))
+            t += d
+    return out
+
+
+def is_key(word: str) -> bool:
+    """Highlight numbers and English words (names, brands, units) like popular Hindi explainer channels."""
+    w = word.strip(".,!?।:;\"'()")
+    return any(c.isdigit() for c in w) or (sum(c.isascii() and c.isalpha() for c in w) >= 2)
+
+
+def caption_image(text: str, size: int) -> Image.Image:
+    fnt = font(size)
+    probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+    space = probe.textlength(" ", font=fnt)
+    words = text.split()
+    widths = [probe.textlength(w, font=fnt) for w in words]
+    pad, sw = int(size * 0.28), max(3, size // 10)
+    keys = [is_key(w) for w in words]
+    W = int(sum(widths) + space * len(words) + pad * 2 * sum(keys) + sw * 6)
+    H = int(size * 1.75)
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    x = sw * 2
+    for w, ww, key in zip(words, widths, keys):
+        y = (H - size * 1.25) / 2
+        if key:
+            d.rounded_rectangle((x, y - size * 0.02, x + ww + pad * 2, y + size * 1.3), radius=int(size * 0.18),
+                                fill=YELLOW + (255,))
+            d.text((x + pad, y), w, font=fnt, fill=(15, 12, 8))
+            x += ww + pad * 2 + space
+        else:
+            d.text((x, y), w, font=fnt, fill="white", stroke_width=sw, stroke_fill=(10, 8, 6))
+            x += ww + space
+    return img.crop((0, 0, int(x + sw * 2), H))
+
+
+def chapter_card(text: str, W: int, H: int) -> Image.Image:
+    """Big centred white title with a yellow underline."""
+    size = int(min(W, H) * 0.085)
+    tb = text_block(text, size, int(W * 0.86), fill="white", stroke="#0b0805")
+    bar_w, bar_h = int(min(tb.width * 0.55, W * 0.5)), max(6, size // 9)
+    img = Image.new("RGBA", (tb.width, tb.height + bar_h * 3), (0, 0, 0, 0))
+    img.paste(tb, (0, 0), tb)
+    ImageDraw.Draw(img).rounded_rectangle(((tb.width - bar_w) // 2, tb.height - bar_h, (tb.width + bar_w) // 2,
+                                          tb.height), radius=bar_h // 2, fill=YELLOW + (255,))
+    return img
+
+
 # ----------------------------------------------------------------------------- film
 
 class Film:
@@ -303,16 +374,33 @@ class Film:
         self.channel_img = text_block(channel.upper(), int(big * 0.5), maxw, fill="#ffd34d", family="serif")
         self.end_img = text_block(thanks, int(big * 1.1), maxw, fill="#ffd34d")
         self.lesson_img = text_block(end_line, int(big * 0.55), maxw)
-        self.cards = {i: text_block(s.card, int(min(self.W, self.H) * 0.075), int(self.W * 0.88), fill="#ffd34d")
-                      for i, s in enumerate(shots) if s.card}
-        band_h = int(self.H * 0.4)
-        grad = Image.linear_gradient("L").resize((self.W, band_h)).point(lambda v: int(v * 0.75))
-        self.band = Image.new("RGBA", (self.W, band_h), (8, 6, 4, 255))
-        self.band.putalpha(grad)
+        self.cards = {i: chapter_card(s.card, self.W, self.H) for i, s in enumerate(shots) if s.card}
+        self.dim = Image.new("RGB", (self.W, self.H), (0, 0, 0))
+        self.chunks = caption_chunks(tl.segs)
+        # second camera angle per shot: a close-up on a random part of the picture (a "cut" mid-shot)
+        self.close = [(rnd.uniform(.3, .7), rnd.uniform(.3, .6), rnd.uniform(1.3, 1.45)) for _ in shots]
+        self.mark = self._watermark(channel)
         self.title_bg = self._prep(title_image, 1.12) if title_image else self.src[0]
         last = self.src[-1].resize((self.W, self.H), Image.BILINEAR)
         self.end_bg = Image.blend(last.filter(ImageFilter.GaussianBlur(14)), Image.new("RGB", last.size, "#120c06"), 0.45)
         self.cap_cache: dict[int, Image.Image] = {}
+
+    def _watermark(self, channel: str) -> Image.Image:
+        size = int(min(self.W, self.H) * 0.03)
+        tb = text_block(channel, size, self.W, fill="white", stroke="#0b0805")
+        icon_p = ROOT / "assets" / "branding" / "profile.png"
+        if not icon_p.exists():
+            return tb
+        ic = Image.open(icon_p).convert("RGBA").resize((int(size * 1.6), int(size * 1.6)), Image.LANCZOS)
+        m = Image.new("L", ic.size, 0)
+        ImageDraw.Draw(m).ellipse((0, 0, ic.width - 1, ic.height - 1), fill=255)
+        ic.putalpha(m)
+        out = Image.new("RGBA", (ic.width + tb.width, max(ic.height, tb.height)), (0, 0, 0, 0))
+        out.paste(ic, (0, (out.height - ic.height) // 2), ic)
+        out.paste(tb, (ic.width - size // 3, (out.height - tb.height) // 2), tb)
+        a = out.getchannel("A").point(lambda v: int(v * 0.85))
+        out.putalpha(a)
+        return out
 
     def _prep(self, path: Path, over: float) -> Image.Image:
         return cover(Image.open(path).convert("RGB"), (int(self.W * over), int(self.H * over)))
@@ -333,17 +421,38 @@ class Film:
         x0, y0 = (sw - bw) * fx, (sh - bh) * fy
         return img.resize((self.W, self.H), Image.BILINEAR, box=(x0, y0, x0 + bw, y0 + bh))
 
+    def _close_up(self, i: int, p: float) -> Image.Image:
+        img = self.src[i]
+        sw, sh = img.size
+        cx, cy, z = self.close[i]
+        z = (sw / self.W) * (z + 0.08 * ease(p))
+        bw, bh = sw / z, sh / z
+        x0 = min(max(cx * sw - bw / 2, 0), sw - bw)
+        y0 = min(max(cy * sh - bh / 2, 0), sh - bh)
+        return img.resize((self.W, self.H), Image.BILINEAR, box=(x0, y0, x0 + bw, y0 + bh))
+
     def _shot_frame(self, i: int, t: float) -> Image.Image:
         a, b = self.tl.shots[i]
-        p = (t - a + XFADE / 2) / (b - a + XFADE)  # keep moving through the crossfades
-        f = self._camera(self.src[i], self.moves[i], p)
+        d = b - a
+        if d > 7.0:  # long shot: wide move for the first part, then cut to a close-up
+            cut = a + d * 0.55
+            if t < cut:
+                f = self._camera(self.src[i], self.moves[i], (t - a + XFADE / 2) / (cut - a + XFADE / 2))
+            else:
+                f = self._close_up(i, (t - cut) / (b - cut + XFADE / 2))
+        else:
+            p = (t - a + XFADE / 2) / (d + XFADE)  # keep moving through the crossfades
+            f = self._camera(self.src[i], self.moves[i], p)
         self.fx[i].draw(f, t)
         return f
 
     def _caption(self, idx: int) -> Image.Image:
         if idx not in self.cap_cache:
-            size = int(min(self.W, self.H) * (0.06 if self.portrait else 0.05))
-            self.cap_cache[idx] = text_block(self.tl.segs[idx].text, size, int(self.W * 0.84), stroke="#1d1d1d")
+            size = int(min(self.W, self.H) * (0.066 if self.portrait else 0.058))
+            img = caption_image(self.chunks[idx][2], size)
+            if img.width > self.W * 0.94:
+                img = img.resize((int(self.W * 0.94), int(img.height * self.W * 0.94 / img.width)), Image.LANCZOS)
+            self.cap_cache[idx] = img
         return self.cap_cache[idx]
 
     def frame(self, fi: int) -> Image.Image:
@@ -371,20 +480,21 @@ class Film:
             f = Image.blend(f, self._shot_frame(i + 1, t), 0.5 - (b - t) / XFADE)
         if tl.intro and i == 0 and t - a < XFADE:  # dissolve from the title card into the first shot
             f = Image.blend(self._title_frame(t), f, (t - a) / XFADE)
-        if i in self.cards and t - a < CARD_SECONDS:  # list item / chapter title
-            k = min(1.0, (t - a) / 0.35, (CARD_SECONDS - (t - a)) / 0.4)
-            band = self.band.copy()
-            band.putalpha(band.getchannel("A").point(lambda v: int(v * k)))
-            f.paste(band, (0, self.H - band.height), band)
-            card = self.cards[i]
-            paste_scaled(f, card, self.W / 2, self.H * 0.83, pop((t - a) / 0.5) * (1 if k >= 1 or t - a < 1 else k))
+        card_on = i in self.cards and t - a < CARD_SECONDS
+        if card_on:  # list item / chapter title, centred
+            k = max(0.0, min(1.0, (t - a) / 0.3, (CARD_SECONDS - (t - a)) / 0.35))
+            f = Image.blend(f, self.dim, 0.35 * k)
+            paste_scaled(f, self.cards[i], self.W / 2, self.H * (0.42 if self.portrait else 0.45),
+                         pop((t - a) / 0.45) * (1 if t - a < 1 else k))
         if self.portrait and tl.intro == 0 and t < 3.0:  # Shorts: title over the opening shot
             paste_scaled(f, self.title_img, self.W / 2, self.H * 0.17, pop(t / 0.6) * min(1.0, (3 - t) / 0.4))
-        if self.captions:
-            cur = next((k for k, s in enumerate(tl.segs) if s.start <= t < s.end), None)
+        if self.captions and not card_on:
+            cur = next((k for k, c in enumerate(self.chunks) if c[0] <= t < c[1]), None)
             if cur is not None:
                 cap = self._caption(cur)
-                f.paste(cap, ((self.W - cap.width) // 2, int(self.H * (0.8 if self.portrait else 0.97)) - cap.height), cap)
+                f.paste(cap, ((self.W - cap.width) // 2, int(self.H * (0.74 if self.portrait else 0.93)) - cap.height), cap)
+        m = self.mark
+        f.paste(m, (int(self.W * 0.02), int(self.H * (0.03 if self.portrait else 0.035))), m)
         return self._fade(f, t)
 
     def _title_frame(self, t: float) -> Image.Image:
@@ -431,18 +541,60 @@ def make_video(shots, images, cfg, work: Path, out: Path, *, portrait: bool, tit
     return tl
 
 
+def _torn_rect(w: int, h: int, color, seed: int) -> Image.Image:
+    """A rectangle with brush-stroke / torn-paper ends."""
+    rnd = random.Random(seed)
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    pts = [(0, 0)]
+    for x in range(0, w + 1, max(8, w // 60)):
+        pts.append((x, rnd.randint(0, max(2, h // 12))))
+    for y in range(0, h + 1, max(6, h // 10)):
+        pts.append((w - rnd.randint(0, max(4, h // 5)), y))
+    for x in range(w, -1, -max(8, w // 60)):
+        pts.append((x, h - rnd.randint(0, max(2, h // 12))))
+    for y in range(h, -1, -max(6, h // 10)):
+        pts.append((rnd.randint(0, max(4, h // 5)), y))
+    ImageDraw.Draw(img).polygon(pts, fill=color)
+    return img
+
+
 def thumbnail(image: Path, text: str, out: Path) -> None:
-    """Facts-channel thumbnail: striking image, darkened left side, 2-4 huge words."""
+    """Explainer-style thumbnail: vivid image + torn two-tone headline banner (white/red + yellow/black)."""
+    from PIL import ImageEnhance
     img = cover(Image.open(image).convert("RGB"), (1280, 720))
-    shade = Image.linear_gradient("L").rotate(-90, expand=True).resize((1280, 720)).point(lambda v: int(v * 0.8))
-    img.paste(Image.new("RGB", img.size, (10, 8, 6)), (0, 0), shade)
-    words = text.upper().split()
-    lines = [" ".join(words[i:i + 2]) for i in range(0, len(words), 2)][:3]
-    blocks = [text_block(line, 130, 760, fill="#ffd34d" if n % 2 == 0 else "#ffffff", stroke="#0b0805")
-              for n, line in enumerate(lines)]
-    step = 150  # line spacing in pixels (blocks carry padding for the outline and shadow)
-    y = 360 - (step * (len(blocks) - 1) + blocks[0].height) / 2
-    for tb in blocks:
-        img.paste(tb, (20, int(y)), tb)
-        y += step
+    img = ImageEnhance.Contrast(ImageEnhance.Color(img).enhance(1.3)).enhance(1.12)
+    words = text.split()
+    if not words:
+        img.save(out, quality=92)
+        return
+    k = max(1, len(words) // 2)
+    parts = [(" ".join(words[:k]), (255, 255, 255, 255), (214, 25, 25)), (" ".join(words[k:]), YELLOW + (255,), (10, 8, 6))]
+    parts = [p for p in parts if p[0]]
+    size, h = 104, 150
+    fnt = font(size)
+    probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+    widths = [int(probe.textlength(p[0], font=fnt)) + 70 for p in parts]
+    scale = min(1.0, 1220 / sum(widths))
+    if scale < 1:
+        size, h = int(size * scale), int(h * scale)
+        fnt = font(size)
+        widths = [int(probe.textlength(p[0], font=fnt)) + int(70 * scale) for p in parts]
+    banner = Image.new("RGBA", (sum(widths) + 20, h + 20), (0, 0, 0, 0))
+    x = 10
+    for n, ((txt, bg, fg), w) in enumerate(zip(parts, widths)):
+        seg = _torn_rect(w + 14, h, bg, seed=n + len(txt))
+        d = ImageDraw.Draw(seg)
+        tw = probe.textlength(txt, font=fnt)
+        d.text(((w + 14 - tw) / 2, (h - size * 1.25) / 2), txt, font=fnt, fill=fg,
+               stroke_width=2 if fg == (10, 8, 6) else 0, stroke_fill=fg)
+        banner.paste(seg, (x, 10), seg)
+        x += w
+    shadow = Image.new("RGBA", banner.size, (0, 0, 0, 0))
+    shadow.putalpha(banner.getchannel("A").point(lambda v: int(v * 0.6)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(8))
+    bx = (1280 - banner.width) // 2
+    img.paste((0, 0, 0), (bx + 6, 22), shadow)
+    img.paste(banner, (bx, 16), banner)
+    ImageDraw.Draw(img).rectangle((bx + 20, 16 + banner.height - 4, bx + banner.width - 20, 16 + banner.height + 2),
+                                  fill=(214, 25, 25))
     img.save(out, quality=92)
