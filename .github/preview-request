@@ -1,2 +1,6 @@
-request 2026-11-10T13:57:32Z
+request 2026-11-28T06:51:36Z
+format=top5
 publish=yes
+privacy=private
+short=no
+providers=cloudflare_schnell,cloudflare_flux2

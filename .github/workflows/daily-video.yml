@@ -83,6 +83,8 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then  # request file: optional "format=", "topic=", "publish=yes" lines
             if grep -q '^publish=yes' .github/preview-request; then export DRY_RUN=false; fi
             if grep -q '^short=no' .github/preview-request; then ARGS="$ARGS --skip-short"; fi
+            V=$(sed -n 's/^privacy=//p' .github/preview-request | head -1)
+            if [ -n "$V" ]; then export PRIVACY_STATUS="$V"; fi
             P=$(sed -n 's/^providers=//p' .github/preview-request | head -1)
             if [ -n "$P" ]; then export IMAGE_PROVIDERS="$P"; fi
             F=$(sed -n 's/^format=//p' .github/preview-request | head -1)
